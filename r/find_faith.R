@@ -1,6 +1,9 @@
 library(arrow)
 library(tidyverse)
 library(fuzzyjoin)
+library(readr)
+library(tidytext)
+
 
 va <- open_csv_dataset("data/va_statewide.csv")
 
@@ -25,22 +28,40 @@ write_parquet(va, "data/va_statewide.parquet")
 # database using dplyr.  You can query the larger file, then "collect"
 # the information you need into your R session.  
 
+
+# Load in HIFLD data for Places of Worship in Virginia. Keep only the fields you
+# want or need.
+
 hifld_worship <- read_csv("data/va_worship.csv") |> 
   janitor::clean_names() |> 
-  mutate(name = str_to_upper(name))  # Convert to uppercase for consistency
+  mutate(name = str_to_upper(name)) |>   # Convert to uppercase for consistency
+  select(1:7)
 
+# Find the most common terms among places of worship in Virginia. 
+
+word_counts <- hifld_worship %>%
+  unnest_tokens(word, name) %>%
+  anti_join(stop_words) %>%  # Remove common stop words
+  count(word, sort = TRUE)
+
+common_words <- word_counts %>%
+  filter(n > 30) %>%
+  pull(word)
+
+contains_two_common_words <- function(name, common_words) {
+  words <- unlist(strsplit(tolower(name), "\\W+"))
+  sum(words %in% common_words) >= 2
+}
+
+filtered_data <- hifld_worship %>%
+  filter(sapply(name, contains_two_common_words, common_words = common_words))
 
 faith_parcels <- open_dataset("data/va_statewide.parquet") %>%
-  select(1:2, 11:16, 19:66) |> 
+  select(1:2, 11:16, 19:66, ll_gisacre) |> 
   mutate(owner_upper = str_to_upper(owner)) %>%
-  collect()
+  collect() |> 
+  filter(sapply(owner, contains_two_common_words, common_words = common_words))
 
-matched_parcels <- faith_parcels %>%
-  fuzzy_left_join(
-    hifld_worship,
-    by = c("owner_upper" = "name"),
-    match_fun = str_detect
-  )
 
 
 
