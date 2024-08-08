@@ -56,11 +56,20 @@ contains_two_common_words <- function(name, common_words) {
 filtered_data <- hifld_worship %>%
   filter(sapply(name, contains_two_common_words, common_words = common_words))
 
+
+# Consider identifying terms or columns that help indicate that a parcel 
+# is not a faith-based organization. 
+
+
+# rdi = Y
+# lbcs_activity = https://www.planning.org/lbcs/standards/activity/
+
+lbcs_keep <- c("9100", "9200", "9300", "9900")
+
 faith_parcels <- open_dataset("data/va_statewide.parquet") %>%
-  select(1:2, 11:16, 19:66, ll_gisacre) |> 
-  mutate(owner_upper = str_to_upper(owner)) %>%
-  collect() |> 
-  filter(sapply(owner, contains_two_common_words, common_words = common_words))
+  filter(rdi != "Y"| is.na(rdi)) %>% # Remove known residential properties with RDI and keep NULLS
+  filter(lbcs_activity %in% lbcs_keep | is.na(lbcs_activity)) |> # Remove known non-church or unclassified properties based on LBCS and keep NULLS
+  collect() 
 
 
 
