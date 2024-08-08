@@ -71,6 +71,55 @@ faith_parcels <- open_dataset("data/va_statewide.parquet") %>%
   filter(lbcs_activity %in% lbcs_keep | is.na(lbcs_activity)) |> # Remove known non-church or unclassified properties based on LBCS and keep NULLS
   collect() 
 
+# The above reduces the entry count to 804,031 parcels. Much more manageable. 
+
+word_list <- c("church", "baptist", "ministries", "christian", "god",
+                    "christ", "fellowship", "faith", "lutheran", "assembly",
+                    "presbyterian", "iglesia", "pentecostal", "grace", "outreach",
+                    "gospel", "ministry", "hope", "temple", "holiness", "worship",
+                    "chapel", "bible", "tabernacle", "methodist", "mount", "covenant",
+                    "jesus", "deliverance", "evagelical", "holy", "korean", "calvary",
+                    "zion", "prophecy", " apostolic", "bahais", "episcopal", "kingdom",
+                    "dios", "spiritual", "trinity", "prayer", "bethel", "catholic", 
+                    "orthodox", "missionary", "saint", "spirit", "islamic", "nazarene",
+                    "congregation", "cristo", "evangelistic", "revival", "antioch", "peace",
+                    "agape", "buddhist", "lord", "mercy", "assemblies", "miniesterio", 
+                    "evangelica", "unity", "saints", "mision", "emmanuel", "imanuel",
+                    "anglican", "cathedral", "coptic", "redeem", "bethlehem", "shalom", "muslim",
+                    "resurrection", "mennonite", "adventist", "diocese", "disciples", "ebenezer",
+                    "heaven", "religious", "cristiano", "emanuel", "israel", "cielo", "chruch",
+                    "reformation", "universalist"
+                    )
+
+pattern <- paste(word_list, collapse = "|")
+
+
+faith_keyword <- faith_parcels %>%
+  unnest_tokens(word, owner) %>%
+  anti_join(stop_words) %>%  # Remove common stop words
+  count(word, sort = TRUE)
+
+  
+faith_found <- faith_parcels |> 
+  filter(str_detect(owner, regex(pattern, ignore_case = TRUE))) 
+
+faith_found_2 <- faith_found |> 
+  mutate(false_positive = str_detect(owner,",")) |> 
+  select(file_name, geoid, owner, usecode, usedesc, struct,
+         improvval, landval, parval, owntype, owner, saddno,
+         saddpref, saddstr, saddsttyp, saddstsuf, sunit, scity, city, county, szip,
+         lat, lon, ll_gisacre, ll_gissqft, ll_bldg_count, ll_bldg_footprint_sqft, 
+         rdi, lbcs_activity, lbcs_function_desc, lbcs_function, lbcs_site, lbcs_site_desc,
+         lbcs_ownership, lbcs_ownership_desc, false_positive)
+  
+
+false_positive_count <- faith_found_2 |> 
+  count(false_positive)
+
+ggplot(false_positive_count, aes(
+       x = false_positive,
+       y = n)) +
+  geom_col()
 
 
 
