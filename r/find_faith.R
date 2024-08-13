@@ -3,6 +3,8 @@ library(tidyverse)
 library(fuzzyjoin)
 library(readr)
 library(tidytext)
+library(babynames)
+library(lexicon)
 
 
 va <- open_csv_dataset("data/va_statewide.csv")
@@ -91,7 +93,9 @@ word_list <- c("church", "baptist", "ministries", "christian", "god",
                     "reformation", "universalist"
                     )
 
-pattern <- paste(word_list, collapse = "|")
+words_boundaries <- paste0("\\b", word_list, "\\b")
+
+pattern <- paste(words_boundaries, collapse = "|")
 
 
 faith_keyword <- faith_parcels %>%
@@ -103,14 +107,27 @@ faith_keyword <- faith_parcels %>%
 faith_found <- faith_parcels |> 
   filter(str_detect(owner, regex(pattern, ignore_case = TRUE))) 
 
+orgwords_to_detect <- c("LLC", "INC")
+
+org_pattern <- paste(orgwords_to_detect, collapse = "|")
+
+
+trustees <- c("TRS", "TRUSTEES", "TRUST")
+
+trs_pattern <- paste(trustees, collapse = "|")
+
+
+
 faith_found_2 <- faith_found |> 
-  mutate(false_positive = str_detect(owner,",")) |> 
+  mutate(false_positive = str_detect(owner,"[,&]"),
+         org = str_detect(owner, org_pattern),
+         trst = str_detect(owner, trs_pattern))|> 
   select(file_name, geoid, owner, usecode, usedesc, struct,
          improvval, landval, parval, owntype, owner, saddno,
          saddpref, saddstr, saddsttyp, saddstsuf, sunit, scity, city, county, szip,
          lat, lon, ll_gisacre, ll_gissqft, ll_bldg_count, ll_bldg_footprint_sqft, 
          rdi, lbcs_activity, lbcs_function_desc, lbcs_function, lbcs_site, lbcs_site_desc,
-         lbcs_ownership, lbcs_ownership_desc, false_positive)
+         lbcs_ownership, lbcs_ownership_desc, false_positive, org, trst)
   
 
 false_positive_count <- faith_found_2 |> 
@@ -119,7 +136,11 @@ false_positive_count <- faith_found_2 |>
 ggplot(false_positive_count, aes(
        x = false_positive,
        y = n)) +
-  geom_col()
+  geom_col
+
+
+
+
 
 
 
