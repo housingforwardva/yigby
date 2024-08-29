@@ -93,16 +93,21 @@ word_list <- c("church", "baptist", "ministries", "christian", "god",
                     "reformation", "universalist"
                     )
 
+# word_list <- as.data.frame(word_list)
+# 
+# write_csv(word_list, "word_list.csv")
+
 words_boundaries <- paste0("\\b", word_list, "\\b")
 
 pattern <- paste(words_boundaries, collapse = "|")
 
+# faith_keyword <- faith_parcels %>%
+#   unnest_tokens(word, owner) %>%
+#   anti_join(stop_words) %>%  # Remove common stop words
+#   count(word, sort = TRUE)
+#   
 
-faith_keyword <- faith_parcels %>%
-  unnest_tokens(word, owner) %>%
-  anti_join(stop_words) %>%  # Remove common stop words
-  count(word, sort = TRUE)
-
+# First pass 
   
 faith_found <- faith_parcels |> 
   filter(str_detect(owner, regex(pattern, ignore_case = TRUE))) 
@@ -111,11 +116,9 @@ orgwords_to_detect <- c("LLC", "INC")
 
 org_pattern <- paste(orgwords_to_detect, collapse = "|")
 
-
 trustees <- c("TRS", "TRUSTEES", "TRUST")
 
 trs_pattern <- paste(trustees, collapse = "|")
-
 
 
 faith_found_2 <- faith_found |> 
