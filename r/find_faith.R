@@ -74,24 +74,45 @@ faith_parcels <- open_dataset("data/va_statewide.parquet") %>%
   collect() 
 
 # The above reduces the entry count to 804,031 parcels. Much more manageable. 
+# Create a word list based on common faith-related words from the HIFLD data.
+
+# word_list <- c("church", "baptist", "ministries", "christian", "god",
+#                     "christ", "fellowship", "faith", "lutheran", "assembly",
+#                     "presbyterian", "iglesia", "pentecostal", "grace", "outreach",
+#                     "gospel", "ministry", "hope", "temple", "holiness", "worship",
+#                     "chapel", "bible", "tabernacle", "methodist", "mount", "covenant",
+#                     "jesus", "deliverance", "evangelical", "holy", "korean", "calvary",
+#                     "zion", "prophecy", " apostolic", "bahais", "episcopal", "kingdom",
+#                     "dios", "spiritual", "trinity", "prayer", "bethel", "catholic", 
+#                     "orthodox", "missionary", "saint", "spirit", "islamic", "nazarene",
+#                     "congregation", "cristo", "evangelistic", "revival", "antioch", "peace",
+#                     "agape", "buddhist", "lord", "mercy", "assemblies", "miniesterio", 
+#                     "evangelica", "unity", "saints", "mision", "emmanuel", "imanuel",
+#                     "anglican", "cathedral", "coptic", "redeem", "bethlehem", "shalom", "muslim",
+#                     "resurrection", "mennonite", "adventist", "diocese", "disciples", "ebenezer",
+#                     "heaven", "religious", "cristiano", "emanuel", "israel", "cielo", "chruch",
+#                     "reformation", "universalist"
+#                     )
+
+# Try a word list that removes common words that could lead to false positives.
 
 word_list <- c("church", "baptist", "ministries", "christian", "god",
-                    "christ", "fellowship", "faith", "lutheran", "assembly",
-                    "presbyterian", "iglesia", "pentecostal", "grace", "outreach",
-                    "gospel", "ministry", "hope", "temple", "holiness", "worship",
-                    "chapel", "bible", "tabernacle", "methodist", "mount", "covenant",
-                    "jesus", "deliverance", "evagelical", "holy", "korean", "calvary",
-                    "zion", "prophecy", " apostolic", "bahais", "episcopal", "kingdom",
-                    "dios", "spiritual", "trinity", "prayer", "bethel", "catholic", 
-                    "orthodox", "missionary", "saint", "spirit", "islamic", "nazarene",
-                    "congregation", "cristo", "evangelistic", "revival", "antioch", "peace",
-                    "agape", "buddhist", "lord", "mercy", "assemblies", "miniesterio", 
-                    "evangelica", "unity", "saints", "mision", "emmanuel", "imanuel",
-                    "anglican", "cathedral", "coptic", "redeem", "bethlehem", "shalom", "muslim",
-                    "resurrection", "mennonite", "adventist", "diocese", "disciples", "ebenezer",
-                    "heaven", "religious", "cristiano", "emanuel", "israel", "cielo", "chruch",
-                    "reformation", "universalist"
-                    )
+               "christ", "fellowship", "lutheran", "assembly",
+               "presbyterian", "iglesia", "pentecostal", 
+               "gospel", "ministry", "temple", "holiness", "worship",
+               "chapel", "bible", "tabernacle", "methodist", "covenant",
+               "jesus", "deliverance", "evangelical", "holy", "korean", "calvary",
+               "zion", "prophecy", " apostolic", "bahais", "episcopal", "kingdom",
+               "dios", "spiritual", "prayer", "bethel", "catholic", 
+               "orthodox", "missionary", "islamic", "nazarene",
+               "congregation", "cristo", "evangelistic", "revival", "antioch", "peace",
+               "agape", "buddhist", "lord", "mercy", "assemblies", "miniesterio", 
+               "evangelica", "unity", "saints", "mision", 
+               "anglican", "cathedral", "coptic", "redeem", "bethlehem", "shalom", "muslim",
+               "resurrection", "mennonite", "adventist", "diocese", "disciples", "ebenezer",
+               "heaven", "religious", "cristiano", "cielo", "chruch",
+               "reformation", "universalist"
+)
 
 # word_list <- as.data.frame(word_list)
 # 
@@ -131,7 +152,15 @@ faith_found_2 <- faith_found |>
          lat, lon, ll_gisacre, ll_gissqft, ll_bldg_count, ll_bldg_footprint_sqft, 
          rdi, lbcs_activity, lbcs_function_desc, lbcs_function, lbcs_site, lbcs_site_desc,
          lbcs_ownership, lbcs_ownership_desc, false_positive, org, trst)
-  
+
+write_rds(faith_found_2, "data/faith_found.rds")
+
+
+first <- read_rds("data/faith_found.rds")
+
+
+# Words that could possibly result in false positives include: Mount (e.g. Rocky Mount), Church (last name),
+# spirit, cemetery, grace, hope, trinity, peace, saint, faith, 
 
 false_positive_count <- faith_found_2 |> 
   count(false_positive)
@@ -139,7 +168,10 @@ false_positive_count <- faith_found_2 |>
 ggplot(false_positive_count, aes(
        x = false_positive,
        y = n)) +
-  geom_col
+  geom_col()
+
+
+
 
 
 
