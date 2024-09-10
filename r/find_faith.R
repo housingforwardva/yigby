@@ -171,6 +171,35 @@ ggplot(false_positive_count, aes(
   geom_col()
 
 
+# Get a list of popular first names
+popular_names <- babynames %>%
+  filter(year >= 1980, year <= 2020) %>%
+  group_by(name) %>%
+  summarise(total = sum(n)) %>%
+  arrange(desc(total)) %>%
+  head(500) %>%
+  pull(name)
+
+
+is_likely_person <- function(name) {
+  name_parts <- unlist(strsplit(name, " "))
+  any(name_parts %in% popular_names)
+}
+
+# The word christian is likely accompanied by some other faith-related word.
+# Church may be a surname.
+# It may be helpful to create indicator columns based on certain words. Some words you
+# may be able to immediately utilize to indicate a faith-based organization and then 
+# immediately remove it from your search.
+# 
+
+first_faith <- first %>%
+  mutate(likely_person = sapply(owner, is_likely_person)) |> 
+  mutate(christian = str_detect(owner, "CHRISTIAN")) |> 
+  mutate(church = str_detect(owner, "CHURCH"))
+
+
+use_desc_choices <- as.data.frame(unique(first_faith$usedesc))
 
 
 
