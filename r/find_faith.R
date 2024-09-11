@@ -7,22 +7,22 @@ library(babynames)
 library(lexicon)
 
 
-va <- open_csv_dataset("data/va_statewide.csv")
-
-# Read everything in as character (as some fields are getting incorrectly
-# flagged as nulls)
-#
-# If you want, convert numeric fields back after you collect or 
-# set up a more detailed schema.  
-va_schema <- schema(
-  map(names(va), ~Field$create(name = .x, type = string()))
-)
-
-# Open the dataset again
-va <- open_csv_dataset("data/va_statewide.csv", schema = va_schema)
-
-# We can write to a compressed parquet file that saves the schema if we want
-write_parquet(va, "data/va_statewide.parquet")
+# va <- open_csv_dataset("data/va_statewide.csv")
+# 
+# # Read everything in as character (as some fields are getting incorrectly
+# # flagged as nulls)
+# #
+# # If you want, convert numeric fields back after you collect or 
+# # set up a more detailed schema.  
+# va_schema <- schema(
+#   map(names(va), ~Field$create(name = .x, type = string()))
+# )
+# 
+# # Open the dataset again
+# va <- open_csv_dataset("data/va_statewide.csv", schema = va_schema)
+# 
+# # We can write to a compressed parquet file that saves the schema if we want
+# write_parquet(va, "data/va_statewide.parquet")
 
 # The parquet file is only 909MB as opposed to the 4.7GB CSV file.
 
@@ -58,6 +58,7 @@ contains_two_common_words <- function(name, common_words) {
 filtered_data <- hifld_worship %>%
   filter(sapply(name, contains_two_common_words, common_words = common_words))
 
+## ---- START HERE ---- 
 
 # Consider identifying terms or columns that help indicate that a parcel 
 # is not a faith-based organization. 
@@ -66,14 +67,16 @@ filtered_data <- hifld_worship %>%
 # rdi = Y
 # lbcs_activity = https://www.planning.org/lbcs/standards/activity/
 
-lbcs_keep <- c("9100", "9200", "9300", "9900")
+## THE BELOW LBCS ACTIVITY CODES SIGNIFY
+lbcs_keep <- c("6600", "5200", "5210", "9100", "9200", "9900")
 
 faith_parcels <- open_dataset("data/va_statewide.parquet") %>%
   filter(rdi != "Y"| is.na(rdi)) %>% # Remove known residential properties with RDI and keep NULLS
   filter(lbcs_activity %in% lbcs_keep | is.na(lbcs_activity)) |> # Remove known non-church or unclassified properties based on LBCS and keep NULLS
   collect() 
 
-# The above reduces the entry count to 804,031 parcels. Much more manageable. 
+## The above reduces the entry count to 811,545 parcels. Much more manageable. 
+
 # Create a word list based on common faith-related words from the HIFLD data.
 
 # word_list <- c("church", "baptist", "ministries", "christian", "god",
@@ -96,8 +99,8 @@ faith_parcels <- open_dataset("data/va_statewide.parquet") %>%
 
 # Try a word list that removes common words that could lead to false positives.
 
-word_list <- c("church", "baptist", "ministries", "christian", "god",
-               "christ", "fellowship", "lutheran", "assembly",
+word_list <- c("ame", "baha'i", "congregacion", "church", "baptist", "ministries", "christian", "god",
+               "christ", "fellowship", "lutheran", "assembly", "diocesan",
                "presbyterian", "iglesia", "pentecostal", 
                "gospel", "ministry", "temple", "holiness", "worship",
                "chapel", "bible", "tabernacle", "methodist", "covenant",
@@ -111,7 +114,8 @@ word_list <- c("church", "baptist", "ministries", "christian", "god",
                "anglican", "cathedral", "coptic", "redeem", "bethlehem", "shalom", "muslim",
                "resurrection", "mennonite", "adventist", "diocese", "disciples", "ebenezer",
                "heaven", "religious", "cristiano", "cielo", "chruch",
-               "reformation", "universalist"
+               "reformation", "universalist", "masjid", "mission", "mosque", "quaker", "shrine",
+               "synagogue", "buddhist", "buddha"
 )
 
 # word_list <- as.data.frame(word_list)
@@ -122,16 +126,154 @@ words_boundaries <- paste0("\\b", word_list, "\\b")
 
 pattern <- paste(words_boundaries, collapse = "|")
 
-# faith_keyword <- faith_parcels %>%
-#   unnest_tokens(word, owner) %>%
-#   anti_join(stop_words) %>%  # Remove common stop words
-#   count(word, sort = TRUE)
-#   
 
-# First pass 
+## BASED ON THE WORD LIST. FILTER THE OWNER NAME COLUMN BASED ON WORDS ASSOCIATED
+## WITH FAITH-BASED ORGANIZATIONS
   
 faith_found <- faith_parcels |> 
   filter(str_detect(owner, regex(pattern, ignore_case = TRUE))) 
+
+## THE ABOVE REDUCES THE PARCEL COUNT FROM 811,545 TO 25,121. 
+## THE USEDESC COLUMN WILL BE HELPFUL TO FINDING PARCELS THAT ARE CONFIRMED 
+## AS RELIGIOUS OR A CEMETERY. CEMETERY PARCELS CAN BE REMOVED BECAUSE THEY ARE
+## UNLIKELY TO EVER BE REDEVELOPED.
+
+
+use_religious <- c("RELIGIOUS", "CHURCH", "WORSHIP", "SANCTUARY", "SANCT")
+use_religious_pattern <- paste(use_religious, collapse = "|")
+
+use_cemetery <- c("CEMETERY", "CEMETERIES", "CEMETARY")
+use_cemetery_pattern <- paste(use_cemetery, collapse = "|")
+
+faith_found_2 <- faith_found |> 
+  select(file_name, geoid, parcelnumb, parcelnumb_no_formatting, owner, usecode, usedesc, struct,
+         improvval, landval, parval, owntype, owner, saddno,
+         saddpref, saddstr, saddsttyp, saddstsuf, sunit, scity, city, county, szip,
+         lat, lon, ll_gisacre, ll_gissqft, ll_bldg_count, ll_bldg_footprint_sqft, 
+         rdi, lbcs_activity, lbcs_function_desc, lbcs_function, lbcs_site, lbcs_site_desc,
+         lbcs_ownership, lbcs_ownership_desc) |> 
+  mutate(usedesc = toupper(usedesc)) |> 
+  mutate(religious_use = str_detect(usedesc, use_religious_pattern)) |> 
+  mutate(cemetery_use = str_detect(usedesc, use_cemetery_pattern)) 
+
+
+## SEPARATE DATA FRAMES OF PARCELS THAT ARE CONFIRMED AS RELIGIOUS BASED ON THEIR
+## USE DESCRIPTIONS.
+faith_confirmed <- faith_found_2 |> 
+  filter(religious_use == TRUE)
+
+## FILTER OUT PARCELS THAT WERE REMOVED FROM THE PREVIOUS AND ALSO REMOVE PARCELS 
+## THAT ARE LIKELY CEMETERIES.
+faith_found_3 <- faith_found_2 |> 
+  filter(cemetery_use != TRUE | is.na(cemetery_use)) |> 
+  filter(religious_use != TRUE | is.na(religious_use)) |> 
+  mutate(owner_cemetery = str_detect(owner, use_cemetery_pattern)) |> 
+  filter(owner_cemetery != TRUE | is.na(owner_cemetery))
+
+## SOME WORDS FROM THE WORD LIST ARE MORE LIKELY TO BE FAITH-BASED ORGANIZATIONS 
+## THAN OTHERS. YOU CAN USE THESE WORDS TO REMOVE PARCELS FROM THE SEARCH AND LATER 
+## MERGE THEM WITH FAITH_CONFIRMED ABOVE.
+
+# WORDS THAT WILL LIKELY NOT RESULT IN FALSE POSITIVES:
+
+positive_words <- c("BAPTIST", "LUTHERAN", "EPISCOPAL", "PRESBYTERIAN", "METHODIST", 
+                    "WORSHIP", "CATHOLIC", "DIOCESAN", "DIOCESE", "MASJID", "MOSQUE",
+                    "SYNAGOGUE", "ISLAMIC", "PENTECOSTAL", "TABERNACLE", "CHRIST", 
+                    "BAPT", "METH", "DIOCESEAN", "BIBLE", "UNIVERSALIST", "MENNOITE",
+                    "MENNONITE", "PENTACOSTAL", "CHURCH OF GOD", "COMMUNITY CHURCH",
+                    "ORTHODOX CHURCH", "CHRISTIAN CHURCH", "CHAPEL CHURCH", "BRETHREN CHURCH",
+                    "CHURCH OF", "ASSEMBLY OF", "HOUSE OF", "CONGREGATION", "MINISTRIES")
+  
+words_boundaries <- paste0("\\b", positive_words, "\\b")
+
+pattern <- paste(words_boundaries, collapse = "|")
+
+# CREATE A BINARY COLUMN THAT DENOTES WHETHER THE OWNER NAME CONTAINS 
+# ONE OF THE POSITIVE WORDS LISTED ABOVE. THESE ARE LIKELY FAITH-ORGS AND 
+# SHOULD BE RETAINED.
+
+faith_found_4 <- faith_found_3 |> 
+  mutate(faith_positive = str_detect(owner, regex(pattern, ignore_case = TRUE))) 
+
+# KEEP ENTRIES WHERE A POSITIVE WORD IS PRESENT.
+
+faith_confirmed_2 <- faith_found_4 |> 
+  filter(faith_positive == TRUE)
+
+# FILTER OUT ENTRIES THAT WERE RETAINED AND THEN CREATE A BINARY TO IDENTIFY 
+# ENTRIES WHERE THE USECODE COLUMN INDICATES A RELIGIOUS ENTITY.
+
+faith_found_5 <- faith_found_4 |> 
+  filter(faith_positive != TRUE | is.na(faith_positive)) |> 
+  mutate(usecode = toupper(usecode)) |> 
+  mutate(usecode_religious = str_detect(usecode, use_religious_pattern))
+
+count_unique <- as.data.frame(table(faith_found_5$usecode, useNA = "always"))
+
+# KEEP ENTRIES WHERE A RELIGIOUS ENTITY IS FOUND USING THE USECODE COLUMN.
+
+faith_confirmed_3 <- faith_found_5 |> 
+  filter(usecode_religious == TRUE)
+
+## THERE ARE CERTAIN WORDS AND PHRASES THAT ARE NOT CHURCH ORGS OR LEAD TO FALSE 
+## POSITIVES. USE THOSE WORDS TO REMOVE THEM FROM DATA FRAME.
+
+
+negative_phrases <- c("FALLS CHURCH", "FIRE", "HOMEOWNERS", "COMMUNITY ASSOCIATION",
+                      "COMMUNITY ASSOC", "MOTOR", "CHURCH STREET", "BETHEL ROAD", 
+                      "CHURCH ROAD", "CHURCH ST", "CHURCH AVE", "CHURCH BLVD",
+                      "COMMUNITY ASSN", "OWNERS ASSN", "843 CHURCH LLC", "7490 BETHLEHEM LLC",
+                      "725 CHURCH LLC", "5907 GOSPEL STREET LLC", "5404 ANTIOCH RD LLC", "53 WEST CHURCH LLC",
+                      "420 WEST CHURCH AVENUE CONDOMINIUM", "333 CHURCH LLC", "316 CHURCH INC",
+                      "26 CHURCH LLC", "251 GARBERS CHURCH FARM LLC", "23 WEST CHURCH AVENUE CONDOMINIUM",
+                      "220 CHURCH LLC", "16 CHURCH LANE LLC", "1330 EBENEZER, LLC", "1330 EBENEZER LLC",
+                      "11859 LORD FAIRFAX HWY LLC", "ZION CROSSROADS", "CAPITAL GROUP")
+
+words_boundaries <- paste0("\\b", negative_phrases, "\\b")
+
+pattern <- paste(words_boundaries, collapse = "|")
+
+
+faith_found_6 <- faith_found_5 |> 
+  filter(usecode_religious != TRUE | is.na(usecode_religious)) |> 
+  mutate(owner = toupper(owner)) |> 
+  filter(!str_detect(owner, regex(pattern, ignore_case = TRUE)))
+
+## THE VIRGINIA SCC LIST OF RELIGIOUS ORG CAN HELP IDENTIFY FAITH ORGS IF THEY 
+## MATCH THE OWNER NAME.
+  
+scc <- read_csv("data/va_scc_religious.csv") |>
+  janitor::clean_names() |>
+  mutate(owner = toupper(entity_name)) |>
+  drop_na(owner) |> 
+  distinct(owner, .keep_all = TRUE)
+
+faith_found_7 <- faith_found_6 |> 
+  left_join(scc, by = "owner") 
+
+## RETAIN ENTRIES WHERE THERE WAS A SUCCESSFUL JOIN.
+
+faith_confirmed_4 <- faith_found_7 |> 
+  filter(!is.na(status))
+
+## FILTER OUT ENTRIES THAT WERE RETAINED PREVIOUSLY AND KEEP ONLY 
+## THOSE WHERE THERE WAS NO SUCCESSFUL JOIN.
+
+faith_found_8 <- faith_found_7 |> 
+  filter(is.na(status))
+
+faith_found_9 <- faith_found_8 |> 
+  mutate(end_church = str_ends(owner, "CHURCH"))
+
+
+  
+
+
+
+
+mutate(false_positive = str_detect(owner,"[,&]"),
+       org = str_detect(owner, org_pattern),
+       trst = str_detect(owner, trs_pattern))|> 
 
 orgwords_to_detect <- c("LLC", "INC")
 
@@ -151,12 +293,42 @@ faith_found_2 <- faith_found |>
          saddpref, saddstr, saddsttyp, saddstsuf, sunit, scity, city, county, szip,
          lat, lon, ll_gisacre, ll_gissqft, ll_bldg_count, ll_bldg_footprint_sqft, 
          rdi, lbcs_activity, lbcs_function_desc, lbcs_function, lbcs_site, lbcs_site_desc,
-         lbcs_ownership, lbcs_ownership_desc, false_positive, org, trst)
+         lbcs_ownership, lbcs_ownership_desc, false_positive, org, trst) |> 
+  mutate(usedesc = toupper(usedesc))
 
-write_rds(faith_found_2, "data/faith_found.rds")
 
 
-first <- read_rds("data/faith_found.rds")
+faith_found_3 <- faith_found_2 |> 
+  mutate(church = str_detect(usedesc, use_religious_pattern),
+         cemetery = str_detect(usedesc, use_cemetery_pattern)) |> 
+  mutate(across(c(church, cemetery), ~replace_na(., FALSE))) |> 
+  filter(cemetery != TRUE)
+
+church_confirmed <- faith_found_3 |> 
+  filter(church == TRUE)
+
+church_unconfirmed <- faith_found_3 |> 
+  filter(church == FALSE) |> 
+  mutate(exempt = str_detect(usedesc, "EXEMPT")) 
+
+
+# Virginia State Corp. Commission maintains a database of organizations with
+# religious affiliation.
+
+
+ 
+church_confirmed_2 <- church_unconfirmed |> 
+  left_join(scc, by = "owner") |> 
+  filter(!is.na(entity_name))
+
+
+
+# Use the use description to remove parcels that are not developable
+# or would not be characterized as faith organizations
+
+unique_use_desc <- as.data.frame(unique(faith_found$use))
+
+count_unique <- as.data.frame(table(faith_found$use, useNA = "always"))
 
 
 # Words that could possibly result in false positives include: Mount (e.g. Rocky Mount), Church (last name),
@@ -192,11 +364,14 @@ is_likely_person <- function(name) {
 # may be able to immediately utilize to indicate a faith-based organization and then 
 # immediately remove it from your search.
 # 
-
-first_faith <- first %>%
+church_unconfirmed_3 <- church_unconfirmed_2 %>%
   mutate(likely_person = sapply(owner, is_likely_person)) |> 
   mutate(christian = str_detect(owner, "CHRISTIAN")) |> 
-  mutate(church = str_detect(owner, "CHURCH"))
+  mutate(church_name = str_detect(owner, "CHURCH"))
+
+
+
+
 
 
 use_desc_choices <- as.data.frame(unique(first_faith$usedesc))
