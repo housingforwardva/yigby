@@ -149,7 +149,7 @@ faith_found_2 <- faith_found |>
   select(file_name, geoid, parcelnumb, parcelnumb_no_formatting, owner, usecode, usedesc, struct,
          improvval, landval, parval, owntype, owner, saddno,
          saddpref, saddstr, saddsttyp, saddstsuf, sunit, scity, city, county, szip,
-         lat, lon, ll_gisacre, ll_gissqft, ll_bldg_count, ll_bldg_footprint_sqft, 
+         lat, lon, ll_uuid, ll_gisacre, ll_gissqft, ll_bldg_count, ll_bldg_footprint_sqft, 
          rdi, lbcs_activity, lbcs_function_desc, lbcs_function, lbcs_site, lbcs_site_desc,
          lbcs_ownership, lbcs_ownership_desc) |> 
   mutate(usedesc = toupper(usedesc)) |> 
@@ -328,7 +328,11 @@ faith_found_11 <- faith_found_10 |>
   filter(!str_detect(owner, "CHRISTIAN, ")) |> 
   filter(!str_detect(owner, "LORD, ")) |> 
   mutate(end_christian = str_ends(owner, "CHRISTIAN")) |> 
-  filter(owner != "LIBERTY SAINTS LLC")
+  filter(owner != "LIBERTY SAINTS LLC") 
+
+faith_found_xx <- faith_found_11 |> 
+  right_join(faith_confirmed_8, by = c("geoid", "parcelnumb", "owner", "saddno", "ll_gissqft")) %>%
+  rename_with(~gsub("\\.x$", "", .), ends_with(".x"))
 
 ## AT THIS POINT THE NUMBER OF ENTRIES IS DOWN TO 1,318 AND THERE ARE FEW PATTERNS 
 ## TO HELP REMOVE OR RETAIN ENTRIES. IT MAY BE BEST TO EXPORT OUT TO A .CSV AND 
@@ -342,26 +346,57 @@ found_faith <- bind_rows(faith_confirmed, faith_confirmed_2, faith_confirmed_3,
 write_rds(found_faith, "data/found_faith.rds")
 
 # write_csv(faith_found_11, "data/finding_faith.csv")
-  
-faith_confirmed_8 <- read_csv("data/finding_faith.csv")
 
-faith_table <- list(found_faith, faith_confirmed_8) %>% 
+found_faith <- read_rds("data/found_faith.rds")
+  
+faith_confirmed_8 <- read_csv("data/finding_faith.csv") |> 
+  mutate(geoid = as.character(geoid)) |> 
+  mutate(parcelnumb = as.character(parcelnumb)) |> 
+  mutate(ll_gissqft = as.character(ll_gissqft))
+
+faith_table <- list(found_faith, faith_found_xx) %>% 
   data.table::rbindlist(fill = TRUE) 
 
+faith_full <- faith_table |> 
+  mutate(join_id = paste(geoid, parcelnumb, owner, sep = "-"))
 
-gpkg_file <- "data/va_statewide.gpkg"
-needed_columns <- c("geoid", "parcelnumb", "parcelnumb_no_formatting", "owner")
-gpkg_data <- st_read(gpkg_file, query = paste("SELECT", paste(needed_columns, collapse = ",")))
+write_csv(faith_table, "data/faith_parcels.csv")
 
-faith_map <- st_read("data/va_statewide.gpkg") 
+faith_full <- read_csv("data/faith_parcels.csv")
 
-|> 
-  right_join(faith_table, by = c("geoid", "parcelnumb", "parcelnumb_no_formatting", "owner"))
+library(sf)
+
+query <- "SELECT * FROM va_statewide WHERE lbcs_activity = 6600 OR lbcs_activity = 5200 OR lbcs_activity = 5210 OR lbcs_activity = 9100 OR lbcs_activity = 9200 OR lbcs_activity = 9900 OR lbcs_activity IS NULL"
+
+faith_sf <- st_read("data/va_statewide.gpkg", query = query)
+
+
+faith_sf_reduced <- faith_sf|> 
+  mutate(join_id = paste(geoid, parcelnumb, owner, sep = "-")) |> 
+  filter(rdi != "Y"| is.na(rdi)) # Remove known residential properties with RDI and keep NULLS
+  
+
+faith_sf_join <- faith_sf_reduced |> 
+  right_join(faith_full, by = "ll_uuid") %>%
+  rename_with(~gsub("\\.x$", "", .), ends_with(".x")) |> 
+  select(file_name, geoid, parcelnumb, parcelnumb_no_formatting, owner, usecode, usedesc, struct,
+         improvval, landval, parval, owntype, owner, saddno,
+         saddpref, saddstr, saddsttyp, saddstsuf, sunit, scity, city, county, szip,
+         lat, lon, ll_uuid, ll_gisacre, ll_gissqft, ll_bldg_count, ll_bldg_footprint_sqft, 
+         rdi, lbcs_activity, lbcs_function_desc, lbcs_function, lbcs_site, lbcs_site_desc,
+         lbcs_ownership, lbcs_ownership_desc)
+
+write_rds(faith_sf_join, "data/va_statewide_geo.rds")
+
+faith_sf_join <- read_rds("data/va_statewide_geo.rds")
+
+library(sf)
+
+st_write(faith_sf_join, "data/va_statewide_geo.gpkg", driver = "GPKG")
 
 
 
-       org = str_detect(owner, org_pattern),
-       trst = str_detect(owner, trs_pattern))|> 
+mapview::mapview(faith_sf_join)
 
 
 
