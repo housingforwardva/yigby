@@ -340,11 +340,23 @@ found_faith <- bind_rows(faith_confirmed, faith_confirmed_2, faith_confirmed_3,
                      faith_confirmed_7)
 
 write_rds(found_faith, "data/found_faith.rds")
-  
 
-write_csv(faith_found_11, "data/finding_faith.csv")
+# write_csv(faith_found_11, "data/finding_faith.csv")
   
+faith_confirmed_8 <- read_csv("data/finding_faith.csv")
 
+faith_table <- list(found_faith, faith_confirmed_8) %>% 
+  data.table::rbindlist(fill = TRUE) 
+
+
+gpkg_file <- "data/va_statewide.gpkg"
+needed_columns <- c("geoid", "parcelnumb", "parcelnumb_no_formatting", "owner")
+gpkg_data <- st_read(gpkg_file, query = paste("SELECT", paste(needed_columns, collapse = ",")))
+
+faith_map <- st_read("data/va_statewide.gpkg") 
+
+|> 
+  right_join(faith_table, by = c("geoid", "parcelnumb", "parcelnumb_no_formatting", "owner"))
 
 
 
