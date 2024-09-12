@@ -182,8 +182,8 @@ positive_words <- c("BAPTIST", "LUTHERAN", "EPISCOPAL", "PRESBYTERIAN", "METHODI
                     "BAPT", "METH", "DIOCESEAN", "BIBLE", "UNIVERSALIST", "MENNOITE",
                     "MENNONITE", "PENTACOSTAL", "CHURCH OF GOD", "COMMUNITY CHURCH",
                     "ORTHODOX CHURCH", "CHRISTIAN CHURCH", "CHAPEL CHURCH", "BRETHREN CHURCH",
-                    "CHURCH OF", "ASSEMBLY OF", "HOUSE OF", "CONGREGATION", "MINISTRIES")
-  
+                    "CHURCH OF", "ASSEMBLY OF")
+
 words_boundaries <- paste0("\\b", positive_words, "\\b")
 
 pattern <- paste(words_boundaries, collapse = "|")
@@ -218,6 +218,7 @@ faith_confirmed_3 <- faith_found_5 |>
 ## THERE ARE CERTAIN WORDS AND PHRASES THAT ARE NOT CHURCH ORGS OR LEAD TO FALSE 
 ## POSITIVES. USE THOSE WORDS TO REMOVE THEM FROM DATA FRAME.
 
+## CHOOSING TO REMOVE YMCA ORGANIZATIONS.
 
 negative_phrases <- c("FALLS CHURCH", "FIRE", "HOMEOWNERS", "COMMUNITY ASSOCIATION",
                       "COMMUNITY ASSOC", "MOTOR", "CHURCH STREET", "BETHEL ROAD", 
@@ -227,7 +228,16 @@ negative_phrases <- c("FALLS CHURCH", "FIRE", "HOMEOWNERS", "COMMUNITY ASSOCIATI
                       "420 WEST CHURCH AVENUE CONDOMINIUM", "333 CHURCH LLC", "316 CHURCH INC",
                       "26 CHURCH LLC", "251 GARBERS CHURCH FARM LLC", "23 WEST CHURCH AVENUE CONDOMINIUM",
                       "220 CHURCH LLC", "16 CHURCH LANE LLC", "1330 EBENEZER, LLC", "1330 EBENEZER LLC",
-                      "11859 LORD FAIRFAX HWY LLC", "ZION CROSSROADS", "CAPITAL GROUP")
+                      "11859 LORD FAIRFAX HWY LLC", "ZION CROSSROADS", "CAPITAL GROUP",
+                      "TRANSPORT", "DEVELOPMENT", "CHURCH, ", ", CHRISTIAN", "CHURCH,",
+                      "PROPERTY", "MANAGEMENT", "DEVELOPMENT", ",JESUS", "PROFESSIONAL",
+                      "PROPERTIES", "COMPANY", "BORN AGAIN CHRISTIAN CONST CO", "CHRISTIAN,",
+                      "HEALTH", "ALL SAINTS CHILD CARE CENTER", "YOUNG MENS", "YOUNG MEN'S", 
+                      "APARTMENTS", "VENTURES", "OWNERS ASSOC", "HOLDINGS", "INVESTING", "REALTY",
+                      "ACQUISITION", "REAL ESTATE", "RENTALS", "CONSTRUCTION", "INVESTMENTS", 
+                      "BUILDERS", "MASONIC", "WILLIAM", "GEORGE", "ROBERT", "GOD'S PIT CREW INC", "COAL PIT MINISTRY INC",
+                      "AGAPE SEVEN LLC", "CEMETERY", "CEMET", "CEMETE", "THE ASSEMBLY INC", "THE ASSEMBLY INCORPORATED",
+                      "ACCA", "REBKEE", "LODGE", "MOCHA")
 
 words_boundaries <- paste0("\\b", negative_phrases, "\\b")
 
@@ -262,22 +272,86 @@ faith_confirmed_4 <- faith_found_7 |>
 faith_found_8 <- faith_found_7 |> 
   filter(is.na(status))
 
+## ENTRIES THAT END WITH CHURCH ARE MORE LIKELY TO BE A CHURCH AND NOT A PERSON.
+
 faith_found_9 <- faith_found_8 |> 
   mutate(end_church = str_ends(owner, "CHURCH"))
 
+count_unique <- as.data.frame(table(faith_found_9$end_church, useNA = "always"))
 
+faith_confirmed_5 <- faith_found_9 |> 
+  filter(end_church == TRUE)
+
+
+orgwords_to_detect <- c("LLC", "INC", "LLP")
+
+org_pattern <- paste(orgwords_to_detect, collapse = "|")
+
+faith_found_10 <- faith_found_9 |> 
+  filter(end_church != TRUE) |> 
+  mutate(investigate = str_detect(owner,"[,&]")) |> 
+  mutate(org = str_detect(owner, org_pattern)) |> 
+  mutate(end_chapel = str_ends(owner, "CHAPEL"))
+
+faith_confirmed_6 <- faith_found_10 |> 
+  filter(end_chapel == TRUE)
+
+positive_words2 <- c("HOUSE OF", "CONGREGATION", "MINISTRIES", "TRUSTEES", "TRS", "TRUST",
+                     "SHRINE OF", "MINIST", "LUTHERANCHURCH", "METHODISTCHURCH", "BRETHRENCHURCH",
+                     "ORTHODOX", "UMC", "FELLOWSHIP", "CHRISTIAN OUTREACH", "CHRISTIAN CENTER",
+                     "REVIVAL CENTER", "EVANGELICAL", "PRAYER", "MISSIONARY", "BRANCH CHRISTIAN",
+                     "CHURCH TRS", "CHURCH TRUST", "CHURCH TRUSTEES", "KINGS CHAPEL CHRISTIAN", 
+                     "DELIVERANCE", "CHURCH INC", "OF GOD", "CALVARY CHAPEL", "CAMP OAK HILL", 
+                     "LIFE CENTER", "ZION CHURCH", "AME", "BETHEL CHURCH", "MINISTRY", "HOLINESS",
+                     "CH", "ANGLICAN", "GOSPEL", "FRIENDS", "NAZARENE", "A.M.E.", "MISSION", "CONGREGATIONAL",
+                     "ASSEMBLY", "UNION", "CROSS", "MUSLIM", "BORN", "ADVENT", "ADVENTIST", "UNITED", "FAITH",
+                     "CATHEDRAL", "IGLESIA", "MISION", "MISIONERA", "SHRINE MONT", "APOSTOLIC"
+                     )
+
+words_boundaries <- paste0("\\b", positive_words2, "\\b")
+
+pattern <- paste(words_boundaries, collapse = "|")
+
+
+faith_confirmed_7 <- faith_found_10 |> 
+  filter(owner != "TULL BRENDA TEMPLE ET AL TRUSTEES") |> 
+  filter(str_detect(owner, regex(pattern, ignore_case = TRUE))) |> 
+  filter(owner != "WILLIAMS MARTIN H & WILLIAMS NAZARENE D") |> 
+  filter(owner != "AMERICAN NATIONAL RED CROSS 352 W CHURCH AVENUE")
+
+
+faith_found_11 <- faith_found_10 |> 
+  filter(!str_detect(owner, regex(pattern, ignore_case = TRUE))) |> 
+  filter(end_chapel != TRUE) |> 
+  filter(owner != "BUNDY SILAS & SHAKIR MUSLIM") |> 
+  mutate(owner = str_replace(owner, ",", ", ")) |> 
+  filter(!str_detect(owner, "CHRISTIAN, ")) |> 
+  filter(!str_detect(owner, "LORD, ")) |> 
+  mutate(end_christian = str_ends(owner, "CHRISTIAN")) |> 
+  filter(owner != "LIBERTY SAINTS LLC")
+
+## AT THIS POINT THE NUMBER OF ENTRIES IS DOWN TO 1,318 AND THERE ARE FEW PATTERNS 
+## TO HELP REMOVE OR RETAIN ENTRIES. IT MAY BE BEST TO EXPORT OUT TO A .CSV AND 
+## MANUALLY REMOVE ENTRIES THAT ARE CLEARLY A PERSON OR A NON-FAITH-BASED ORGANIZATION.
+
+
+found_faith <- bind_rows(faith_confirmed, faith_confirmed_2, faith_confirmed_3,
+                     faith_confirmed_4, faith_confirmed_5, faith_confirmed_6,
+                     faith_confirmed_7)
+
+write_rds(found_faith, "data/found_faith.rds")
+  
+
+write_csv(faith_found_11, "data/finding_faith.csv")
   
 
 
 
 
-mutate(false_positive = str_detect(owner,"[,&]"),
        org = str_detect(owner, org_pattern),
        trst = str_detect(owner, trs_pattern))|> 
 
-orgwords_to_detect <- c("LLC", "INC")
 
-org_pattern <- paste(orgwords_to_detect, collapse = "|")
 
 trustees <- c("TRS", "TRUSTEES", "TRUST")
 
