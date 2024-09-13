@@ -1,0 +1,99 @@
+```{r}
+#| label: setup
+
+library(tidyverse)
+library(hdatools)
+
+
+```
+
+```{r}
+#| label: fig-pdc
+
+faith_mapped <- read_rds("data/faith_mapped.rds")
+
+faith_summary_pdc <- faith_mapped |> 
+  group_by(pdc) |> 
+  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+            avg_parcel_size = mean(acres),
+            count = as.numeric(n_distinct(ll_uuid)))
+
+ggplot(faith_summary_pdc,
+       aes(x = reorder(pdc, count),
+           y = count)) +
+  geom_col(fill = "#40c0c0") +
+  geom_text(aes(label = scales::comma(round(count, 0))), color = "#a9a9a9", hjust = -0.2) +
+  coord_flip() +
+  theme_hfv() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Total faith organization owned parcels")
+
+```
+
+```{r}
+#| label: fig-pdc-acres
+
+faith_mapped <- read_rds("data/faith_mapped.rds") 
+
+faith_summary_pdc <- faith_mapped |> 
+  group_by(pdc) |> 
+  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+            avg_parcel_size = mean(acres),
+            count = as.numeric(n_distinct(ll_uuid)))
+
+ggplot(faith_summary_pdc,
+       aes(x = reorder(pdc, total_acres),
+           y = total_acres)) +
+  geom_col(fill = "#40c0c0") +
+  geom_text(aes(label = scales::comma(round(total_acres, 0))), color = "#a9a9a9", hjust = -0.2) +
+  coord_flip() +
+  theme_hfv() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Total acres of faith organization owned land")
+
+```
+
+```{r}
+#| label: fig-pdc-avg-acres
+
+faith_mapped <- read_rds("data/faith_mapped.rds") 
+
+faith_summary_pdc <- faith_mapped |> 
+  group_by(pdc) |> 
+  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+            med_parcel_size = median(acres),
+            count = as.numeric(n_distinct(ll_uuid)))
+
+ggplot(faith_summary_pdc,
+       aes(x = reorder(pdc, med_parcel_size),
+           y = med_parcel_size)) +
+  geom_col(fill = "#40c0c0") +
+    geom_text(aes(label = round(med_parcel_size, 2)), color = "#FFFFFF", hjust = 1.1) +
+  coord_flip() +
+  theme_hfv() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)), limits = c(0,2))
+
+
+```
+
+
+```{r}
+#| label: fig-hr
+
+faith_mapped <- read_rds("data/faith_mapped.rds") |> 
+  filter(pdc == "Hampton Roads")
+
+faith_summary_hr <- faith_mapped |> 
+  group_by(jurisdiction, owner) |> 
+  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+            avg_parcel_size = mean(acres),
+            count = as.numeric(n_distinct(ll_uuid)))
+
+ggplot(faith_summary_hr,
+       aes(x = reorder(jurisdiction, count),
+           y = count)) +
+  geom_col() +
+  coord_flip()
+
+```
+

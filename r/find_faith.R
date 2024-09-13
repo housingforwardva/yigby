@@ -5,6 +5,8 @@ library(readr)
 library(tidytext)
 library(babynames)
 library(lexicon)
+library(sf)
+
 
 
 # va <- open_csv_dataset("data/va_statewide.csv")
@@ -279,13 +281,19 @@ faith_found_9 <- faith_found_8 |>
 
 count_unique <- as.data.frame(table(faith_found_9$end_church, useNA = "always"))
 
+## RETAIN ENTRIES THAT END WITH CHURCH
+
 faith_confirmed_5 <- faith_found_9 |> 
   filter(end_church == TRUE)
 
+## CREATE A PATTERN TO EASILY FILTER ORGANIZATIONS.
 
 orgwords_to_detect <- c("LLC", "INC", "LLP")
 
 org_pattern <- paste(orgwords_to_detect, collapse = "|")
+
+## CREATE A COLUMN TO DETECT WHETHER OWNER NAME ENDS WITH CHAPEL. THESE ENTRIES 
+## ARE MORE LIKELY TO BE A FAITH-BASED ORG.
 
 faith_found_10 <- faith_found_9 |> 
   filter(end_church != TRUE) |> 
@@ -293,8 +301,13 @@ faith_found_10 <- faith_found_9 |>
   mutate(org = str_detect(owner, org_pattern)) |> 
   mutate(end_chapel = str_ends(owner, "CHAPEL"))
 
+## RETAIN ENTRIES THAT END WITH CHAPEL.
+
 faith_confirmed_6 <- faith_found_10 |> 
   filter(end_chapel == TRUE)
+
+## CREATE A LIST OF WORDS THAT ARE DEFINITIVELY A FAITH-BASED ORG IN VIRGINIA. THIS IS BASED ON 
+## A SERIES OF TRIAL AND ERROR EXPLORATION OF THE DATA.
 
 positive_words2 <- c("HOUSE OF", "CONGREGATION", "MINISTRIES", "TRUSTEES", "TRS", "TRUST",
                      "SHRINE OF", "MINIST", "LUTHERANCHURCH", "METHODISTCHURCH", "BRETHRENCHURCH",
@@ -312,6 +325,8 @@ words_boundaries <- paste0("\\b", positive_words2, "\\b")
 
 pattern <- paste(words_boundaries, collapse = "|")
 
+## RETAIN ENTRIES THAT CONTAIN THOSE POSITIVE WORDS, BUT FILTER OUT KNOWN ENTRIES 
+## THAT ARE NOT FAITH-BASED ORGS.
 
 faith_confirmed_7 <- faith_found_10 |> 
   filter(owner != "TULL BRENDA TEMPLE ET AL TRUSTEES") |> 
@@ -319,6 +334,9 @@ faith_confirmed_7 <- faith_found_10 |>
   filter(owner != "WILLIAMS MARTIN H & WILLIAMS NAZARENE D") |> 
   filter(owner != "AMERICAN NATIONAL RED CROSS 352 W CHURCH AVENUE")
 
+## THE PRECEDING HAS REDUCED THE NUMBER OF ENTRIES TO A MANAGEABLE AMOUNT OF ENTRIES.
+## WHAT CAN FOLLOW IS A MANUAL REVIEW OF ENTRIES TO REMOVE ENTRIES THAT ARE LIKELY 
+## NOT FAITH-BASED ORGS OR ARE OBVIOUSLY PEOPLE.
 
 faith_found_11 <- faith_found_10 |> 
   filter(!str_detect(owner, regex(pattern, ignore_case = TRUE))) |> 
@@ -330,29 +348,42 @@ faith_found_11 <- faith_found_10 |>
   mutate(end_christian = str_ends(owner, "CHRISTIAN")) |> 
   filter(owner != "LIBERTY SAINTS LLC") 
 
-faith_found_xx <- faith_found_11 |> 
-  right_join(faith_confirmed_8, by = c("geoid", "parcelnumb", "owner", "saddno", "ll_gissqft")) %>%
-  rename_with(~gsub("\\.x$", "", .), ends_with(".x"))
-
 ## AT THIS POINT THE NUMBER OF ENTRIES IS DOWN TO 1,318 AND THERE ARE FEW PATTERNS 
 ## TO HELP REMOVE OR RETAIN ENTRIES. IT MAY BE BEST TO EXPORT OUT TO A .CSV AND 
 ## MANUALLY REMOVE ENTRIES THAT ARE CLEARLY A PERSON OR A NON-FAITH-BASED ORGANIZATION.
 
-
-found_faith <- bind_rows(faith_confirmed, faith_confirmed_2, faith_confirmed_3,
-                     faith_confirmed_4, faith_confirmed_5, faith_confirmed_6,
-                     faith_confirmed_7)
-
-write_rds(found_faith, "data/found_faith.rds")
-
 # write_csv(faith_found_11, "data/finding_faith.csv")
 
-found_faith <- read_rds("data/found_faith.rds")
-  
-faith_confirmed_8 <- read_csv("data/finding_faith.csv") |> 
-  mutate(geoid = as.character(geoid)) |> 
-  mutate(parcelnumb = as.character(parcelnumb)) |> 
+## THE PREVIOUS ANALYSIS FAILED TO INCLUDE THE LL_UUID COLUMN WHICH SERVES AS A 
+## UNIQUE IDENTIFIER. IN ORDER TO RETAIN THE ENTRIES FROM THE MANUAL REVIEW, A RIGHT JOIN 
+## BELOW WAS MADE TO THE FAITH_FOUND_11 OBJECT. THIS RESULTS IN THE SAME NUMBER OF ENTRIES (415)
+## BEING RETAINED.
+
+faith_confirmed_8 <- read_csv("data/finding_faith.csv") |>
+mutate(geoid = as.character(geoid)) |>
+  mutate(parcelnumb = as.character(parcelnumb)) |>
   mutate(ll_gissqft = as.character(ll_gissqft))
+
+faith_found_xx <- faith_found_11 |> 
+  right_join(faith_confirmed_8, by = c("geoid", "parcelnumb", "owner", "saddno", "ll_gissqft")) %>%
+  rename_with(~gsub("\\.x$", "", .), ends_with(".x"))
+
+
+# found_faith <- bind_rows(faith_confirmed, faith_confirmed_2, faith_confirmed_3,
+#                      faith_confirmed_4, faith_confirmed_5, faith_confirmed_6,
+#                      faith_confirmed_7)
+
+# write_rds(found_faith, "data/found_faith.rds")
+
+
+found_faith <- read_rds("data/found_faith.rds")
+
+## MERGE THE CONFIRMED AND THE LAST DATA FRAME TOGETHER. USE THE FOLLOWING TO 
+## FORCE DATA TYPES TO MATCH. 
+## 
+## NOTE THAT SOME ENTRIES WERE RETAINED THAT SHOULD BE REVIEWED WITH VIRGINIA 
+## INTERFAITH. THIS INCLUDES SCHOOLS, CAMPS, ACADEMIES, MEDIA ORGANIZATIONS LIKE
+## CHRISTIAN BROADCASTING, RADIO, ETC.
 
 faith_table <- list(found_faith, faith_found_xx) %>% 
   data.table::rbindlist(fill = TRUE) 
@@ -360,11 +391,10 @@ faith_table <- list(found_faith, faith_found_xx) %>%
 faith_full <- faith_table |> 
   mutate(join_id = paste(geoid, parcelnumb, owner, sep = "-"))
 
-write_csv(faith_table, "data/faith_parcels.csv")
+# write_csv(faith_table, "data/faith_parcels.csv")
 
 faith_full <- read_csv("data/faith_parcels.csv")
 
-library(sf)
 
 query <- "SELECT * FROM va_statewide WHERE lbcs_activity = 6600 OR lbcs_activity = 5200 OR lbcs_activity = 5210 OR lbcs_activity = 9100 OR lbcs_activity = 9200 OR lbcs_activity = 9900 OR lbcs_activity IS NULL"
 
@@ -394,153 +424,4 @@ library(sf)
 
 st_write(faith_sf_join, "data/va_statewide_geo.gpkg", driver = "GPKG")
 
-
-
 mapview::mapview(faith_sf_join)
-
-
-
-trustees <- c("TRS", "TRUSTEES", "TRUST")
-
-trs_pattern <- paste(trustees, collapse = "|")
-
-
-faith_found_2 <- faith_found |> 
-  mutate(false_positive = str_detect(owner,"[,&]"),
-         org = str_detect(owner, org_pattern),
-         trst = str_detect(owner, trs_pattern))|> 
-  select(file_name, geoid, owner, usecode, usedesc, struct,
-         improvval, landval, parval, owntype, owner, saddno,
-         saddpref, saddstr, saddsttyp, saddstsuf, sunit, scity, city, county, szip,
-         lat, lon, ll_gisacre, ll_gissqft, ll_bldg_count, ll_bldg_footprint_sqft, 
-         rdi, lbcs_activity, lbcs_function_desc, lbcs_function, lbcs_site, lbcs_site_desc,
-         lbcs_ownership, lbcs_ownership_desc, false_positive, org, trst) |> 
-  mutate(usedesc = toupper(usedesc))
-
-
-
-faith_found_3 <- faith_found_2 |> 
-  mutate(church = str_detect(usedesc, use_religious_pattern),
-         cemetery = str_detect(usedesc, use_cemetery_pattern)) |> 
-  mutate(across(c(church, cemetery), ~replace_na(., FALSE))) |> 
-  filter(cemetery != TRUE)
-
-church_confirmed <- faith_found_3 |> 
-  filter(church == TRUE)
-
-church_unconfirmed <- faith_found_3 |> 
-  filter(church == FALSE) |> 
-  mutate(exempt = str_detect(usedesc, "EXEMPT")) 
-
-
-# Virginia State Corp. Commission maintains a database of organizations with
-# religious affiliation.
-
-
- 
-church_confirmed_2 <- church_unconfirmed |> 
-  left_join(scc, by = "owner") |> 
-  filter(!is.na(entity_name))
-
-
-
-# Use the use description to remove parcels that are not developable
-# or would not be characterized as faith organizations
-
-unique_use_desc <- as.data.frame(unique(faith_found$use))
-
-count_unique <- as.data.frame(table(faith_found$use, useNA = "always"))
-
-
-# Words that could possibly result in false positives include: Mount (e.g. Rocky Mount), Church (last name),
-# spirit, cemetery, grace, hope, trinity, peace, saint, faith, 
-
-false_positive_count <- faith_found_2 |> 
-  count(false_positive)
-
-ggplot(false_positive_count, aes(
-       x = false_positive,
-       y = n)) +
-  geom_col()
-
-
-# Get a list of popular first names
-popular_names <- babynames %>%
-  filter(year >= 1980, year <= 2020) %>%
-  group_by(name) %>%
-  summarise(total = sum(n)) %>%
-  arrange(desc(total)) %>%
-  head(500) %>%
-  pull(name)
-
-
-is_likely_person <- function(name) {
-  name_parts <- unlist(strsplit(name, " "))
-  any(name_parts %in% popular_names)
-}
-
-# The word christian is likely accompanied by some other faith-related word.
-# Church may be a surname.
-# It may be helpful to create indicator columns based on certain words. Some words you
-# may be able to immediately utilize to indicate a faith-based organization and then 
-# immediately remove it from your search.
-# 
-church_unconfirmed_3 <- church_unconfirmed_2 %>%
-  mutate(likely_person = sapply(owner, is_likely_person)) |> 
-  mutate(christian = str_detect(owner, "CHRISTIAN")) |> 
-  mutate(church_name = str_detect(owner, "CHURCH"))
-
-
-
-
-
-
-use_desc_choices <- as.data.frame(unique(first_faith$usedesc))
-
-
-
-
-
-
-
-
-# Let's try this for the baptist example.
-faith_based_orgs <- open_dataset("data/va_statewide.parquet") |> 
-  filter(str_detect(owner, regex("baptist|methodist|episcopal|presbyterian|lutheran|catholic|church|temple|synagogue|mosque|congregation|ministry|chapel|christian|evangelical|pentecostal|adventist|assembly of god|jehovah|latter-day saints|mormon|mennonite|quaker|friends meeting|unitarian|orthodox", ignore_case = TRUE))) |> 
-  collect() |> 
-  select(1:2, 11:16, 19:66)
-
-faith_based_orgs <- open_dataset("data/va_statewide.parquet") |> 
-  select(1:2, 11:16, 19:66) |> 
-  mutate(
-    is_faith_based = str_detect(owner, regex("baptist|methodist|episcopal|presbyterian|lutheran|catholic|church|temple|synagogue|mosque|congregation|ministry|chapel|(^|\\s)christian|evangelical|pentecostal|adventist|assembly of god|jehovah|latter-day saints|lds|mormon|mennonite|quaker|friends meeting|unitari(an|um)|orthodox", ignore_case = TRUE)),
-    potential_false_negative = str_detect(owner, regex("\\b(christian|christ)(sen|son|ensen|enson)\\b", ignore_case = TRUE))
-  ) |> 
-  filter(is_faith_based | potential_false_negative) |>
-  collect()
-
-# We've cut the original dataset with 4.2 million rows down to 11,541 rows
-# with "(Bb)aptist" in their `owner` column. 
-baptist
-
-# Working with GeoPackages is a little trickier as we can't use 
-# `arrow::open_dataset()` on them yet. However, there are some ways we 
-# can crack into the data.
-
-# Let's take a look first at the layers in the GeoPackage:
-library(sf)
-
-st_layers("va_statewide.gpkg")
-
-query <- "SELECT * FROM va_statewide WHERE owner LIKE '%BAPTIST%'"
-
-baptist_sf <- st_read("va_statewide.gpkg", query = query)
-
-# We'll trim down our data a bit and take a look at it: 
-library(mapview)
-
-baptist_sf_min <- baptist_sf |> 
-  select(parcelnumb, zoning_description, yearbuilt, 
-         owner, parval)
-
-mapview(baptist_sf_min)

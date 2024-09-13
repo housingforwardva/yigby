@@ -3,7 +3,6 @@ library(mapgl)
 library(tigris)
 library(sf)
 
-Sys.setenv(MAPBOX_PUBLIC_TOKEN = 'pk.eyJ1IjoiZXJpY3ZtYWkiLCJhIjoiY2xvZDVuM3BpMDNyajJrbzNxdGV2cDdsZiJ9.j5UmQvRd_iU12LtmCbjiEw')
 
 faith <- st_read("data/va_statewide_geo.gpkg")
 
