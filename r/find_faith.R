@@ -52,6 +52,8 @@ common_words <- word_counts %>%
   filter(n > 30) %>%
   pull(word)
 
+data.frame(common_words)
+
 contains_two_common_words <- function(name, common_words) {
   words <- unlist(strsplit(tolower(name), "\\W+"))
   sum(words %in% common_words) >= 2

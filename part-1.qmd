@@ -1,0 +1,58 @@
+# Introduction
+
+```{r}
+#| label: setup
+
+library(tidyverse)
+
+
+```
+
+## Goal
+
+Estimate the number and characteristics of properties owned by faith-based organizations in Virginia. Provide data to help inform policy related to the development of affordable housing on these parcels.
+
+## Background
+
+Senate Bill 233, which aimed to grant religious organizations certain powers to overcome local zoning barriers for affordable housing development on their own land, was continued in committee by the Virginia Senate during the 2024 General Assembly Session.
+
+In response, a coalition led by the Virginia Interfaith Center for Public Policy has formed to explore future legislative strategies. This research project will provide essential data on the scope and scale of faith-based property ownership across Virginia to guide and substantiate new policy proposals.
+
+## Research
+
+The primary objectives of this research are to identify and examine properties owned by faith-based organizations in Virginia, determining:
+
+-   Total number and acreage of parcels
+-   of parcels by region
+-   Proportion of undeveloped vs. actively used properties
+-   Development potential based on current zoning (for a representative sample of properties)
+
+## Data Sources
+
+The research that follows relies on three primary data sources:
+
+1.  LOVELAND Technologies’ Regrid dataset for Virginia (comprehensive statewide parcel dataset)
+
+2.  Property lists provided by faith associations
+
+3.  U.S. Department of Homeland Security’s Homeland Infrastructure Foundation-Level Data (HIFLD) - All Places of Worship dataset for Virginia
+
+
+## Methodology
+
+LOVELAND Technologies' Regrid dataset for Virginia provides the most comprehensive source to investigate properties based on ownership. This dataset has several fields of interest that can help determine the ownership and use of a property. While not all jurisdictions in Virginia have full data field coverage in Regrid, there is no comparable data source.
+
+To identify faith-based organizations, HFV employed an extensive series of filtering and key word search to retain parcels likely owned by a faith-based organization, while removing properties that were definitively not a place of worship or a property owned by a likely faith-based organization. 
+
+In Virginia, there are over 4 million individual parcels. Working with such a large dataset required an investigation of available fields in the Regrid dataset and keywords that would help identify faith-based organizations. 
+
+A keyword list was developed based on an investigation of the Department of Homeland Security's "Homeland Infrastructure Foundation-Level Data (HIFLD) - All Places of Worship" dataset for Virginia. Utilizing the R programming language, we identified words that appeared 30 or more times among names of places of worship in Virginia. This list of 96 terms was reviewed internally by HFV staff and terms that could result in false positives were removed. This list was shared with Virginia Interfaith Center for Public Policy to review and suggest additions or changes.
+
+[Insert table of keywords]
+
+To reduce the over 4 million individual parcels to a manageable size, HFV utilized the Land Based Classification Standards Activity code provided in the Regrid dataset to remove parcels that were known to be used for activities unrelated to places of worship or unknown activities. In addition, the Regrid dataset utilizes United States Postal Service data to determine whether a property is a residential address. This field is known as the Residential Delivery  (RDI). Entries wherein RDI was identified as "N" for not a residential delivery address or where the value was NA were retained.
+
+
+This helped to reduce the dataset from 4 million entries to just over 800,000.
+
+
