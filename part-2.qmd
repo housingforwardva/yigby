@@ -4,11 +4,13 @@
 library(tidyverse)
 library(hdatools)
 
-
 ```
+
+## Findings
 
 ```{r}
 #| label: fig-pdc
+#| fig-cap: "Total faith-based owned parcels by PDC"
 
 faith_mapped <- read_rds("data/faith_mapped.rds")
 
@@ -26,7 +28,7 @@ ggplot(faith_summary_pdc,
   coord_flip() +
   theme_hfv() +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-  labs(title = "Total faith organization owned parcels")
+  labs(title = "Total faith-based owned parcels")
 
 ```
 
@@ -96,4 +98,9 @@ ggplot(faith_summary_hr,
   coord_flip()
 
 ```
+## Northern Virginia
 
+```{r}
+
+
+```

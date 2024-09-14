@@ -1,0 +1,57 @@
+project:
+  type: book
+  execute-dir: project
+  output-dir: docs
+  
+execute: 
+  freeze: auto
+
+format:
+  html:
+    theme:
+      - lumen
+      - custom.scss
+    grid: 
+      sidebar-width: 350px
+    fontsize: "100%"
+    template-partials:
+      - toc.html
+    toc-title: "On this page"
+  # pdf:
+  #   documentclass: scrreprt
+  #   mainfont: "Open Sans"
+  #   fig-pos: "H"
+  #   include-in-header:
+  #     text: |
+  #       \usepackage{float}
+  #       \raggedbottom
+
+book:
+  title: "Faith-Based Property Ownership in Virginia"
+  repo-url: https://github.com/housingforwardva/yigby
+  author: 
+    name: "HousingForward Virginia"
+    url: https://www.housingforwardva.org
+  sidebar: 
+    logo: "img/vza.png"
+    search: true
+  # downloads: pdf 
+  date: today
+  chapters:
+    - index.qmd 
+    - part: "Introduction"
+      chapters:
+        - part-1.qmd # Introduction
+    - part: "Findings"
+      chapters:
+        - part-2.qmd # Summary
+  # - part: "Appendix"
+
+knitr:
+  opts_chunk: 
+    echo: false
+    warning: false
+    message: false
+    
+# comments: 
+#   hypothesis: true

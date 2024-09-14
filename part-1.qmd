@@ -2,9 +2,8 @@
 
 ```{r}
 #| label: setup
-
+#| 
 library(tidyverse)
-
 
 ```
 
@@ -37,22 +36,88 @@ The research that follows relies on three primary data sources:
 
 3.  U.S. Department of Homeland Security’s Homeland Infrastructure Foundation-Level Data (HIFLD) - All Places of Worship dataset for Virginia
 
-
 ## Methodology
 
 LOVELAND Technologies' Regrid dataset for Virginia provides the most comprehensive source to investigate properties based on ownership. This dataset has several fields of interest that can help determine the ownership and use of a property. While not all jurisdictions in Virginia have full data field coverage in Regrid, there is no comparable data source.
 
-To identify faith-based organizations, HFV employed an extensive series of filtering and key word search to retain parcels likely owned by a faith-based organization, while removing properties that were definitively not a place of worship or a property owned by a likely faith-based organization. 
+To identify faith-based organizations, HFV employed an extensive series of filtering and key word search to retain parcels likely owned by a faith-based organization, while removing properties that were definitively not a place of worship or a property owned by a likely faith-based organization.
 
-In Virginia, there are over 4 million individual parcels. Working with such a large dataset required an investigation of available fields in the Regrid dataset and keywords that would help identify faith-based organizations. 
+In Virginia, there are over 4 million individual parcels. Working with such a large dataset required an investigation of available fields in the Regrid dataset and keywords that would help identify faith-based organizations.
 
 A keyword list was developed based on an investigation of the Department of Homeland Security's "Homeland Infrastructure Foundation-Level Data (HIFLD) - All Places of Worship" dataset for Virginia. Utilizing the R programming language, we identified words that appeared 30 or more times among names of places of worship in Virginia. This list of 96 terms was reviewed internally by HFV staff and terms that could result in false positives were removed. This list was shared with Virginia Interfaith Center for Public Policy to review and suggest additions or changes.
 
-[Insert table of keywords]
+\[Insert table of keywords\]
 
-To reduce the over 4 million individual parcels to a manageable size, HFV utilized the Land Based Classification Standards Activity code provided in the Regrid dataset to remove parcels that were known to be used for activities unrelated to places of worship or unknown activities. In addition, the Regrid dataset utilizes United States Postal Service data to determine whether a property is a residential address. This field is known as the Residential Delivery  (RDI). Entries wherein RDI was identified as "N" for not a residential delivery address or where the value was NA were retained.
-
+To reduce the over 4 million individual parcels to a manageable size, HFV utilized the Land Based Classification Standards Activity code provided in the Regrid dataset to remove parcels that were known to be used for activities unrelated to places of worship or unknown activities. In addition, the Regrid dataset utilizes United States Postal Service data to determine whether a property is a residential address. This field is known as the Residential Delivery (RDI). Entries wherein RDI was identified as "N" for not a residential delivery address or where the value was NA were retained.
 
 This helped to reduce the dataset from 4 million entries to just over 800,000.
 
+Utilizing the word list, we detected all instances where a term was present in the owner name field. These entries were retained and resulted in a reduction in entries from over 800,000 to 25,121. The Use Description (usedesc) field of the dataset was used to identify known properties denoted as a faith-based property. A column was created to denote whether a property was a confirmed religious use and another column was created to denote whether the use was a cemetery.
 
+Entries that were a confirmed religious use were retained in a separate dataframe and the remaining entries were analyzed. Cemetery properties were removed from the dataframe because the likelihood of cemetery properties being redeveloped for housing is low.
+
+Following this was a series of retaining and eliminating entries based on keywords. This involved multiple manual reviews of the data to identify common terms that could lead to the retention or elimination of entries that were false positives. For example, a review would lead to the identification of several instances of "Mocha Temple". The Mocha Shriners are a fraternal order and not a faith-based organization, but they often refer to their properties as temples. Therefore, "Mocha" was used as a word to eliminate entries from the dataframe.
+
+In contrast, there were several words that were always associated with a faith-based property. These words or phrases were used to retain entries. For example, the term "Lutheran" and "Presbyterian" were always associated with a faith-based organization.
+
+To aid in the confirmation of faith-based organizations, data from the Virginia State Corporation Commission (SCC) was used to retain entries of confirmed religious organizations. The SCC is responsible for granting corporate charters to religious organizations in Virginia, which are considered non-stock corporations. A list of these organizations was matched to the dataframe based on entity names.
+
+The series of data retention and elimination led to two dataframes: a dataframe of 22,387 entries where the likelihood of ownership by a faith-based organization was confirmed or high and a dataframe of 1,318 unconfirmed entries. This unconfirmed dataframe was manageable for a manual review. The unconfirmed dataframe was manually reviewed by HFV and entries that were not a faith-based organization were removed. This includes individuals wherein their name resulted in a false positive (e.g., their named contained the word "Lord," "Christian," or "Church"). Other entries that were removed were companies or other entities that were more than likely not a faith-based organization. This manual review resulted in the reduction of the unconfirmed dataframe to 415 entries.
+
+The resulting dataframes were combined leading to a total of 22,802 entries.
+
+An additional review of the data identified the continued presence of certain terms and other organizations not previously removed. This included schools, academies, media companies, and cemeteries. These entries were removed and resulted in a total of 22,466 entries.
+
+The resulted data were then combined with geospatial data in QGIS to calculate the acreage for all parcels. While LOVELAND Technologies provides this data as a field, their coverage was not complete for all jurisdictions. This dataset was used in the ensuing analysis.
+
+## Data Accuracy
+
+The final dataset represents an *estimation* of faith-based property ownership in Virginia. The exact count of faith-based properties in Virginia could be higher or lower than the final count in this report. However, the results of this report represent the most comprehensive statewide investigation to date.
+
+Confidence levels are created to quantify the reliability and accuracy of statistical estimates or predictions. In the context of classifying properties as faith-based organizations, confidence levels serve several crucial purposes:
+
+Measure of Certainty: They provide a numerical representation of how certain we are about the accuracy of our classification method. Quality Assurance: They help in assessing the reliability of the data and the classification process. Decision Support: They aid in making informed decisions based on the level of confidence in the results. Transparency: They offer a clear way to communicate the reliability of the findings to stakeholders. Improvement Guidance: They highlight areas where the classification method might need refinement.
+
+How Confidence Levels Were Created for This Analysis The process of creating confidence levels for the faith-based property classification involved several key steps:
+
+1.  Sampling: From the total 22,466 properties classified, a random sample of 378 was selected. This sample size was determined to achieve a 95% confidence level with a 5% margin of error.
+
+2.  Verification: Each property in the sample was manually verified to determine if it was correctly classified as faith-based.
+
+3.  Accuracy Calculation: The proportion of correctly classified properties in the sample was calculated, providing an estimate of the overall accuracy.
+
+4.  Confidence Interval Calculation: Using the sample results, a 95% confidence interval for the true accuracy was computed. This interval provides a range within which we can be 95% confident the true accuracy lies.
+
+5.  Confidence Level Assignment: Based on the calculated accuracy, a confidence level was assigned using predefined criteria:
+
+    -   95-100% accuracy: Very High Confidence
+
+    -   90-94% accuracy: High Confidence
+
+    -   80-89% accuracy: Moderate Confidence
+
+    -   70-79% accuracy: Low Confidence Below
+
+    -   70% accuracy: Very Low Confidence
+
+6.  Statistical Analysis: The binomial test was used to calculate the confidence interval, accounting for the sample size and observed accuracy.
+
+7.  Interpretation: The results were interpreted to understand the implications of the confidence interval and assigned confidence level.
+
+This process allows for a nuanced understanding of the classification accuracy. For instance, if the sample showed 92% accuracy with a confidence interval of \[88.89%, 94.50%\], we can say with 95% confidence that the true accuracy of the classification method lies between 88.89% and 94.50%. This would be assigned a "High Confidence" level.
+
+The creation of these confidence levels provides a robust framework for assessing the reliability of the property classification. It acknowledges that while the method may not be perfect, we can quantify its accuracy and express our certainty about the results. This approach balances the need for practical usability of the data with a clear understanding of its limitations, enabling more informed decision-making and targeted improvements to the classification method if needed.
+
+Based on a random sample of 378 entries, 100% of entries sampled were a faith-based organization. Using the Wilson score interval method, which is more appropriate than the normal approximation when proportions are very high or low, the lower bound confidence interval is 99.03% and the upper bound is 100%. Therefore, we can be 95% confident that the true accuracy of the entire dataset lies between 99.03% and 100%.
+
+This result is statistically significant, indicating that the high accuracy is very unlikely to be due to chance.
+
+## Virginia Zoning Atlas
+
+The Virginia Zoning Atlas is a project of HousingForward Virginia that seeks to analyze and map all of the zoning districts in Virginia. The purpose of the Virginia Zoning Atlas is to understand how much developable land in Virginia allows or does not allow for diverse types of housing. To date, HFV has completed three regions based on regional planning district commissions.
+
+The atlas offers opportunities to apply data collected on zoning to other areas of interest, including development viability based on zoning. With the zoning atlas, we will be able to determine what type of housing can be built on faith-based owned properties and conduct additional analysis.
+
+By-right zoning for residential development on faith-based owned properties reduces a significant barrier to residential development. But requiring faith-based organizations to go through a public hearing process in order to develop housing can increase costs or lead to project-ending opposition from existing residents.
+
+Utilizing the Northern Virginia region as a case study, HFV will examine the zoning of faith-based owned properties within the footprint of the Northern Virginia Regional Commission (NVRC). The Northern Virginia region's zoning atlas was completed by the Mercatus Center at George Mason University in collaboration with HousingForward Virginia and the Urban Institute.
