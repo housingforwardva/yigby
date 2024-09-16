@@ -2,17 +2,23 @@
 #| label: setup
 
 library(tidyverse)
+library(kableExtra)
 library(hdatools)
 
 ```
 
 ## Findings
 
+Out of the over 4 million parcels in Virginia, 22,453 were identified as likely owned by a faith-based organization --- with a 95% confidence level that the true accuracy of the entire dataset lies between 99.03% and 100%.
+
 ```{r}
 #| label: fig-pdc
 #| fig-cap: "Total faith-based owned parcels by PDC"
 
-faith_mapped <- read_rds("data/faith_mapped.rds")
+faith_mapped <- read_rds("data/faith_mapped.rds") |> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE)
+
 
 faith_summary_pdc <- faith_mapped |> 
   group_by(pdc) |> 
@@ -100,7 +106,182 @@ ggplot(faith_summary_hr,
 ```
 ## Northern Virginia
 
+Conducting a spatial join in QGIS between the 652 identified parcels and the Northern Virginia Zoning Atlas resulted in 648 parcels retained. The four parcels that were removed were located in areas not covered by the Virginia Zoning Atlas, most likely to the area being deemed protected or undevelopable. 
+
+
 ```{r}
+#| label: fig-nova-count
+
+nova_zoning <- st_read("data/nova_faith_zoning.gpkg")|> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE)
+
+
+count_type_area <- nova_zoning |> 
+  drop_na(jurisdiction_2) |> 
+  group_by(jurisdiction_2) |> 
+  summarise(acres = sum(acres),
+            count = n_distinct(ll_uuid)
+            )
+
+ggplot(count_type_area,
+       aes(x = reorder(jurisdiction_2, count),
+           y = count)) +
+  geom_col() +
+  coord_flip()
+
+```
+
+```{r}
+#| label: fig-nova-acres
+
+nova_zoning <- st_read("data/nova_faith_zoning.gpkg")|> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE)
+
+count_type_area <- nova_zoning |> 
+  drop_na(jurisdiction_2) |> 
+  group_by(jurisdiction_2) |> 
+  summarise(acres = sum(acres),
+            count = n_distinct(ll_uuid)
+            ) 
+
+ggplot(count_type_area,
+       aes(x = reorder(jurisdiction_2, acres),
+           y = acres)) +
+  geom_col(
+    fill = "#40c0c0"
+  ) +
+  geom_text(aes(
+    label = acres, 
+    hjust = -0.1
+    )) +
+  coord_flip() +
+  theme_hfv(
+    base_size = 10
+    ) +
+  scale_y_continuous(
+    labels = number_format(big.mark = ","),
+    expand = expansion(mult = c(0, 0.01))
+    ) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.major.x = element_line(linewidth = 0.5)
+    )
+
+number_format()
+```
+```{r}
+#| label: tbl-pct
+
+percent_to_numeric <- function(x) {
+  as.numeric(sub("%", "", x)) / 100
+}
+
+pct_tbl <- read_rds("data/rds/nova_byright_table.rds") |> 
+  drop_na(jurisdiction) |> 
+  mutate(across(3:5, .fns = ~ percent_to_numeric(.x)))
+
+# pct_tbl |> 
+#   arrange(desc(parcels)) |> 
+#   kbl(col.names = c("Jurisdiction", "Parcel Count", "Single-Family", "Duplex", "Multifamily (3+)"),
+#       align = "lcccc") |> 
+#     kable_styling(bootstrap_options = c("striped", "condensed"))
+
+
+
+datatable(pct_tbl, 
+          caption = htmltools::tags$caption(
+            style = 'caption-side: top; text-align: left; color: grey; font-size: 20px; 
+            font-family: "Open Sans", sans-serif;
+            padding-bottom: 20px;
+            font-weight: bold;
+            ',
+            'Percent of parcels zoned by-right'
+          ),
+
+          colnames = c("Jurisdiction", "Parcel Count", "Single-Family",
+                       "Duplex", "Multifamily"),
+          rownames = FALSE,
+          options = list(
+            pageLength = -1,  # Show all rows
+            dom = 't',        # Remove search bar and other controls
+            scrollY = "400px",  # Add vertical scrolling if needed
+            scrollCollapse = TRUE,
+            initComplete = JS(
+              "function(settings, json) {",
+              "$(this.api().table().header()).css({'font-family': 'Open Sans'});",
+              "}"
+          ),
+            columnDefs = list(list(className = 'dt-center', targets = 1:4))  # Center-align columns 2-5
+          ),
+          style = "bootstrap",
+          fillContainer = TRUE) %>%
+  formatStyle(
+    columns = 3,  # Single-Family
+    background = styleColorBar(pct_tbl[, 3], '#40c0c0'),
+    backgroundSize = '98% 88%',
+    backgroundRepeat = 'no-repeat',
+    backgroundPosition = 'center'
+  ) %>%
+  formatStyle(
+    columns = 4,  # Duplex
+    background = styleColorBar(pct_tbl[, 4], '#8b85ca'),
+    backgroundSize = '98% 88%',
+    backgroundRepeat = 'no-repeat',
+    backgroundPosition = 'center'
+  ) %>%
+  formatStyle(
+    columns = 5,  # Multifamily
+    background = styleColorBar(pct_tbl[, 5], '#011e41'),
+    backgroundSize = '98% 88%',
+    backgroundRepeat = 'no-repeat',
+    backgroundPosition = 'center'
+  ) %>%
+  formatPercentage(columns = 3:5, digits = 1) |> 
+    formatStyle(names(pct_tbl),
+              fontFamily = "Open Sans")
+
+
+
+
+  
+  
 
 
 ```
+
+```{r}
+#| label: tbl-pct
+
+
+pct_bar <- read_rds("data/rds/nova_byright_table.rds") |> 
+  drop_na(jurisdiction) |> 
+  mutate(multifamily = (parse_number(multifamily))/100)
+
+ggplot(pct_bar,
+       aes(x = reorder(jurisdiction, multifamily),
+           y = multifamily)) +
+  geom_col(
+    fill = "#40c0c0"
+  ) +
+  geom_text(aes(
+    label = percent(multifamily, 2)), 
+    hjust = -0.1
+    ) +
+  coord_flip() +
+  theme_hfv(
+    base_size = 10
+    ) +
+  scale_y_continuous(
+    labels = percent_format(),
+    expand = expansion(mult = c(0, 0.01)),
+    limits = c(0, 1.01)
+    ) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.major.x = element_line(linewidth = 0.5)
+    )
+
+```
+

@@ -23,27 +23,45 @@ count_type <- as.data.frame(table(nova_zoning$jurisdiction_2, useNA = "always"))
 count_type_area <- nova_zoning |> 
   group_by(jurisdiction, type) |> 
   summarise(acres = sum(acres),
-            count = n_distinct(ll_uuid)) |> 
+            count = n_distinct
+            ) |> 
   drop_na(jurisdiction)
   
 
 nova_zoning_apts <- nova_zoning |> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
   filter(family4_treatment == "allowed")
 
 # Out of 649 properties, only 205 of them allow for multifamily housing by-right.
 
 nova_zoning_no_housing <- nova_zoning |> 
-  filter(family1_treatment == "prohibited" & family2_treatment == "prohibited" & family3_treatment == "prohibited" & family4_treatment == "prohibited")
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  filter(family1_treatment == "prohibited" &
+           family2_treatment == "prohibited" & 
+           family3_treatment == "prohibited" & 
+           family4_treatment == "prohibited")
 
 # Out of 649 properties, there are 132 where no housing is allowed at all, either through public hearing or by-right.
 
 nova_zoning_lot <- nova_zoning |> 
-  filter(family4_treatment == "allowed" | family4_treatment == "hearing") |> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  filter(family4_treatment == "allowed" | 
+           family4_treatment == "hearing") |> 
   mutate(lot_fit = case_when(
     acres >= min4 ~ TRUE,
     TRUE ~ FALSE
   )) |> 
-  select(jurisdiction, family4_treatment, abbrvname, ll_uuid, owner, acres, min4, lot_fit) |> 
+  select(jurisdiction, 
+         family4_treatment, 
+         abbrvname, 
+         ll_uuid, 
+         owner, 
+         acres, 
+         min4, 
+         lot_fit) |> 
   group_by(lot_fit) |> 
   summarise(count = n_distinct(ll_uuid))
 
@@ -57,17 +75,29 @@ nova_zoning_lot <- nova_zoning |>
 # vacant lots or lots with a significant amount of available land that can be developed/redeveloped.
 
 nova_building <- nova_zoning |> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
   select(jurisdiction, owner, abbrvname, type, family1_treatment,
          family2_treatment, family3_treatment, family4_treatment,
-         ll_bldg_count, ll_bldg_footprint_sqft, acres) |> 
-  mutate(bld_acres = ll_bldg_footprint_sqft/43560) |> 
-  mutate(bld_acres = ifelse(is.na(bld_acres), 0, bld_acres)) |> 
+         ll_bldg_count, ll_bldg_footprint_sqft, acres
+         ) |> 
+  mutate(bld_acres = ll_bldg_footprint_sqft/43560
+         ) |> 
+  mutate(bld_acres = ifelse(is.na(bld_acres), 0, bld_acres)
+         ) |> 
   mutate(bld_coverage = bld_acres/acres)
 
 # A map can be created with the mapgl package and used to verify the results.
 
+
+# The below summarizes the percentage of parcels in each NOVA jurisdiction that allows
+# for different types of housing by-right (i.e., out of total parcels identified in each parcel
+# how many can be developed by-right to build x type of housing)
+
 nova_zoning_summary <- nova_zoning |> 
-  group_by(jurisdiction) |> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  group_by(jurisdiction_2) |> 
   mutate(total_area = n_distinct(ll_uuid)) |> 
   mutate(family1_ct = case_when(
     family1_treatment == "allowed" ~ 1,
@@ -85,23 +115,45 @@ nova_zoning_summary <- nova_zoning |>
     family4_treatment == "allowed" ~ 1,
     TRUE ~ 0 
   )) |> 
-  select(jurisdiction, family1_ct, family2_ct,
+  select(jurisdiction_2, family1_ct, family2_ct,
          family3_ct, family4_ct, total_area)
 
 nova_summary <- nova_zoning_summary |> 
-  group_by(jurisdiction, total_area) |> 
+  group_by(jurisdiction_2, total_area) |> 
   summarise(family1_byright = sum(family1_ct),
             family2_byright = sum(family2_ct),
             family3_byright = sum(family3_ct),
             family4_byright = sum(family4_ct),
-            .groups = "drop") |> 
+            .groups = "drop"
+            ) |> 
   mutate(across(family1_byright:family4_byright, ~ .x / total_area)) |> 
   mutate(across(family1_byright:family4_byright, ~ scales::percent(.x, accuracy = 0.01)))
 
-across()
-  
+nova_summary_byright <- nova_summary |> 
+  select(jurisdiction = jurisdiction_2, 
+         parcels = total_area, 
+         single_fam = family1_byright,
+         duplex = family2_byright, 
+         multifamily = family3_byright
+         ) 
 
-  
+write_rds(nova_summary_byright, "data/rds/nova_byright_table.rds")
+
+## Identify top 5 owners based on acreage and parcel count. 
+
+top <- nova_zoning |> 
+  st_drop_geometry() |> 
+  group_by(owner) |> 
+  summarise(count = n_distinct(ll_uuid),
+            total_area = sum(acres),
+            med_area = median(acres))
+
+top_10_parcels <- top[order(top$count, decreasing = TRUE)[1:10], ]
+top_10_area <- top[order(top$total_area, decreasing = TRUE)[1:10], ]
+
+top_10_area <- top_10_area |> 
+  mutate(owner = str_to_title(owner))
+
 
 count_structure <- as.data.frame(table(faith$lbcs_site.x, useNA = "always"))
 count_site <- as.data.frame(table(faith$lbcs_structure, useNA = "always"))

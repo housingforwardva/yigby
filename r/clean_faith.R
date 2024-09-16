@@ -52,7 +52,8 @@ faith_mapped <- faith |>
   mutate(owner = toupper(owner)) |> 
   mutate(bld_coverage = ll_bldg_footprint_sqft/ll_gissqft) |> 
   drop_na(ll_uuid) |> 
-  filter(!str_detect(owner, pattern))
+  filter(!str_detect(owner, pattern)) |> 
+  distinct(ll_uuid, .keep_all = TRUE)
   
 
 write_rds(faith_mapped, "data/faith_mapped.rds")

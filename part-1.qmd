@@ -66,7 +66,7 @@ The series of data retention and elimination led to two dataframes: a dataframe 
 
 The resulting dataframes were combined leading to a total of 22,802 entries.
 
-An additional review of the data identified the continued presence of certain terms and other organizations not previously removed. This included schools, academies, media companies, and cemeteries. These entries were removed and resulted in a total of 22,466 entries.
+An additional review of the data identified the continued presence of certain terms and other organizations not previously removed. This included schools, academies, media companies, and cemeteries. These entries were removed and resulted in a total of 22,466 entries. Instances of duplicate parcels existed and were identified using Regrid's "ll_uuid" field, which uniquely identifies a single parcel. This further reduced the total number of entries to 22,453.
 
 The resulted data were then combined with geospatial data in QGIS to calculate the acreage for all parcels. While LOVELAND Technologies provides this data as a field, their coverage was not complete for all jurisdictions. This dataset was used in the ensuing analysis.
 
@@ -80,7 +80,7 @@ Measure of Certainty: They provide a numerical representation of how certain we 
 
 How Confidence Levels Were Created for This Analysis The process of creating confidence levels for the faith-based property classification involved several key steps:
 
-1.  Sampling: From the total 22,466 properties classified, a random sample of 378 was selected. This sample size was determined to achieve a 95% confidence level with a 5% margin of error.
+1.  Sampling: From the total 22,453 properties classified, a random sample of 378 was selected. This sample size was determined to achieve a 95% confidence level with a 5% margin of error.
 
 2.  Verification: Each property in the sample was manually verified to determine if it was correctly classified as faith-based.
 
