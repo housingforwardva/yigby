@@ -1,20 +1,21 @@
----
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
+# Findings {part-2}
+
 ```{r}
 #| label: setup
 
 library(tidyverse)
 library(kableExtra)
 library(hdatools)
+library(sf)
+library(geojsonsf)
 
 ```
 
 ## Findings
 
-Out of the over 4 million parcels in Virginia, 22,453 were identified as likely owned by a faith-based organization --- with a 95% confidence level that the true accuracy of the entire dataset lies between 99.03% and 100%.
+Out of the over 4 million parcels in Virginia, 22,453 were identified as likely owned by a faith-based organization --- with a 95% confidence level that the true accuracy of the entire dataset lies between 99.03% and 100%. These findings were based on a keyword search with a process of retention and elimination based on known faith-based and secular entities. Some faith-based properties could be absent from the analysis due to terms or phrases not accounted for. However, the following represents a significant, if not an overwhelming majority, of parcels owned by faith-based organizations in the Commonwealth of Virginia. 
+
+To investigate geographic patterns further, HFV uti
 
 ```{r}
 #| label: fig-pdc
@@ -109,6 +110,20 @@ ggplot(faith_summary_hr,
   coord_flip()
 
 ```
+
+
+## General Assembly Districts
+
+```{r}
+
+districts <- geojson_sf("data/faith_gen_assembly.geojson") |> 
+  st_drop_geometry() |> 
+  select()
+
+
+
+```
+
 ## Northern Virginia
 
 Conducting a spatial join in QGIS between the 652 identified parcels and the Northern Virginia Zoning Atlas resulted in 648 parcels retained. The four parcels that were removed were located in areas not covered by the Virginia Zoning Atlas, most likely to the area being deemed protected or undevelopable. 

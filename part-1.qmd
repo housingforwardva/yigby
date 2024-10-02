@@ -1,4 +1,4 @@
-# Introduction
+# Introduction {part-1}
 
 ```{r}
 #| label: setup
@@ -110,7 +110,7 @@ The creation of these confidence levels provides a robust framework for assessin
 
 Based on a random sample of 378 entries, 100% of entries sampled were a faith-based organization. Using the Wilson score interval method, which is more appropriate than the normal approximation when proportions are very high or low, the lower bound confidence interval is 99.03% and the upper bound is 100%. Therefore, we can be 95% confident that the true accuracy of the entire dataset lies between 99.03% and 100%.
 
-This result is statistically significant, indicating that the high accuracy is very unlikely to be due to chance.
+This result is statistically significant, indicating that the high accuracy is very unlikely to be due to chance. However, there is a high chance that the data set may be missing faith-based owned parcels that were not captured using the keywords. Additional analysis and cross-referencing for a sample of jurisdictions could enhance the data in the future.
 
 ## Virginia Zoning Atlas
 
