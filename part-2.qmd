@@ -9,6 +9,7 @@ library(hdatools)
 library(sf)
 library(geojsonsf)
 library(ggtext)
+library(scales)
 
 ```
 
@@ -136,7 +137,7 @@ At the local level, we can identify jurisdictions with significant acreage of fa
 
 ```{r}
 #| label: fig-local-count
-#| fig-cap: "Top 15: Parcel count by jurisdiction"
+#| fig-cap: "Top 15: Median parcel size by jurisdiction"
 
 faith_mapped <- read_rds("data/faith_mapped.rds")|> 
   st_drop_geometry() |> 
@@ -169,17 +170,23 @@ ggplot(faith_summary_local,
 
 ```
 
+The top ten organizations who own the most land in jurisdictions along the I-95/I-64 corridor are listed below.The Presbyterian League of the Presbytery of Eastern Virginia owns the most acreage with 12 parcels that amount to 3,429 acres in New Kent County. 
 
 ```{r}
-#| label: fig-local-med
-#| fig-cap: "Top 15: Median parcel size by jurisdiction"
+#| label: fig-local-own
+#| fig-cap: "Top 5: Parcel count by owners in "
 
 faith_mapped <- read_rds("data/faith_mapped.rds")|> 
   st_drop_geometry() |> 
-  distinct(ll_uuid, .keep_all = TRUE)
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  filter(
+    pdc == "Hampton Roads" | 
+      pdc == "PlanRVA" |
+      pdc == "Northern Virginia" |
+      pdc == "George Washington")
 
 faith_summary_local <- faith_mapped %>% 
-  group_by(jurisdiction, pdc) %>% 
+  group_by(owner, jurisdiction) %>% 
   summarise(
     total_acres = sum(acres, na.rm = TRUE),
     med_parcel_size = median(acres, na.rm = TRUE),
@@ -191,27 +198,57 @@ faith_summary_local <- faith_mapped %>%
     total_acres = round(total_acres, 2),
     med_parcel_size = round(med_parcel_size, 2)
   ) %>% 
-  arrange(desc(med_parcel_size)) %>%
-  slice_head(n = 20)
+  arrange(desc(total_acres)) %>%
+  slice_head(n = 10) |> 
+  mutate(owner = str_to_title(owner))
 
-ggplot(faith_summary_local,
-       aes(x = reorder(jurisdiction, med_parcel_size),
-           y = med_parcel_size,
-           fill = pdc)) +
-  geom_col() +
-  coord_flip() +
-  theme_hfv()
+
+faith_summary_local |> 
+  kbl(col.names = c("Owner", "Jurisdiction", "Total Acres", "Median Parcel Size", "Number of Parcels"), align = "lcccc") |> 
+  kable_styling(bootstrap_options = c("striped", "condensed"))
+
+
+
 
 ```
 
 ## General Assembly Districts
 
 ```{r}
+#| label: fig-parcels-ga
+#| fig-cap: "Total acres by Sentate District"
+#| eval: false
 
-districts <- geojson_sf("data/faith_gen_assembly.geojson") |> 
+hdistricts <- geojson_sf("data/faith_gen_assembly.geojson") |> 
   st_drop_geometry() |> 
-  rename(senate = NAMELSAD)|> 
-  rename(house = NAMELSAD_2)
+  rename(house = NAMELSAD)|> 
+  rename(senate = NAMELSAD_2) |> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE)
+
+faith_summary_ga <- hdistricts |> 
+  group_by(house) |> 
+  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+            avg_parcel_size = mean(acres),
+            count = as.numeric(n_distinct(ll_uuid)))
+
+# sum(faith_summary_pdc$total_acres)
+
+ggplot(faith_summary_ga,
+       aes(x = reorder(house, total_acres),
+           y = total_acres)) +
+  geom_point(fill = "#011E41") +
+  geom_text(
+    aes(label = scales::comma(round(total_acres, 0))), 
+    color = "#011E41", 
+    hjust = -0.2
+    ) +
+  coord_flip() +
+  theme_hfv() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Total acres of faith-based owned land by House District",
+       caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset.")
+
 
 
 
@@ -284,8 +321,11 @@ ggplot(count_type_area,
 
 number_format()
 ```
+
 ```{r}
-#| label: tbl-pct
+#| label: tbl-pct-1
+
+library(DT)
 
 percent_to_numeric <- function(x) {
   as.numeric(sub("%", "", x)) / 100
@@ -365,7 +405,7 @@ datatable(pct_tbl,
 ```
 
 ```{r}
-#| label: tbl-pct
+#| label: tbl-pct-2
 
 
 pct_bar <- read_rds("data/rds/nova_byright_table.rds") |> 

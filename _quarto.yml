@@ -14,8 +14,8 @@ format:
     grid: 
       sidebar-width: 350px
     fontsize: "100%"
-    template-partials:
-      - toc.html
+    # template-partials:
+    #   - toc.html
     toc-title: "On this page"
   # pdf:
   #   documentclass: scrreprt
@@ -33,7 +33,7 @@ book:
     name: "HousingForward Virginia"
     url: https://www.housingforwardva.org
   sidebar: 
-    logo: "img/vza.png"
+    # logo: "img/vza.png"
     search: true
   # downloads: pdf 
   date: today

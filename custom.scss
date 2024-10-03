@@ -1,0 +1,163 @@
+// import fonts
+
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+/*-- scss:defaults --*/
+
+// custom colors
+
+$hfv-shadow: #1a3454;
+$hfv-sky: #53c6c6;
+$hfv-lilac: #9691cf;
+$hfv-grass: #3a9f9c;
+$hfv-berry: #B1005F;
+$hfv-desert: #e66b3f;
+
+$hfv-shadow-muted: #808ea0;
+$hfv-sky-muted: #9fdfdf;
+
+// global colors
+
+$body-bg: #FFFFFF;
+$body-color: #1C1B1A;
+$link-color: $hfv-sky;
+
+// set fonts
+
+$font-family-sans-serif: 'Open Sans', sans-serif;
+$presentation-heading-font: 'Poppins', serif;
+
+// presentation colors
+
+$presentation-heading-color: $hfv-shadow;
+
+// presentation fonts
+
+$presentation-heading-font: 'Poppins', serif;
+$presentation-heading-line-height: 1.2;
+
+// font sizes
+
+$presentation-font-size-root: 45px;
+
+// other
+
+$presentation-title-slide-text-align: left;
+
+
+/*-- scss:rules --*/
+
+.white_text {
+  color: #FFFFFF;
+}
+
+.white_title {
+  color: #FFFFFF;
+  font-size: 300%;
+  font-weight: bold;
+}
+
+.teal_highlight {
+  color: $hfv-sky;
+  font-weight: bold;
+}
+
+.primary-res {
+  color: $hfv-lilac;
+  font-weight: bold;
+}
+
+.mixed-res {
+  color: $hfv-sky;
+  font-weight: bold;
+}
+
+.non-res {
+  color: $hfv-shadow;
+  font-weight: bold;
+}
+
+.reveal h1, h2, h3 {
+  padding-bottom: 0.5em;
+}
+
+.reveal p {
+  padding-bottom: 0.8em;
+}
+
+.reveal h3 {
+  font-size: 1em;
+}
+
+.slide-center {
+  text-align: center !important;
+}
+
+.highlight-sky {
+  color: #FFFFFF;
+  background: $hfv-sky;
+  font-weight: bold;
+}
+
+// slide variants
+
+#title-slide {
+
+  top: 0 !important;
+  bottom: 0 !important;
+
+  .title {
+    font-size: 2em;
+    color: $body-bg;
+    padding-bottom: 0.25em !important;
+  }
+  
+  .subtitle {
+    font-size: 1.25em;
+    color: $body-bg;
+    padding-bottom: 1em;
+  }
+  
+  .author, .affiliation, .date {
+    font-size: 0.9em;
+    color: $body-bg !important;
+    padding-bottom: 0em !important;
+  }
+
+  .logo-title {
+    opacity: 95%;
+    position: absolute !important;
+    bottom: 0px !important;
+  }
+
+}
+
+// presentation footer
+
+.reveal .footer {
+  background-color: $presentation-heading-color !important;
+  color: $body-bg;
+  line-height: 1em;
+  display: block;
+  position: fixed;
+  bottom: 0px !important;
+  padding-bottom: 0px !important;
+  padding-top: 12px !important;
+  margin-bottom: 0px !important;
+  width: 100%;
+  text-align: center;
+  font-size: 18px;
+  z-index: 2 !important;
+}
+
+.reveal .progress {
+  height: 5px !important;
+  background-color: $presentation-heading-color !important;
+}
+
+.reveal .slide-logo {
+  margin-bottom: 5px !important;
+  opacity: 80%;
+  z-index: 3 !important;
+}
