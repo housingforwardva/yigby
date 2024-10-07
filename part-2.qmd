@@ -219,6 +219,9 @@ faith_summary_local |>
 #| fig-cap: "Total acres by Sentate District"
 #| eval: false
 
+# There are too many house districts to make a decent bar chart. It would be best
+# to create a choropleth map of the House Districts.
+
 hdistricts <- geojson_sf("data/faith_gen_assembly.geojson") |> 
   st_drop_geometry() |> 
   rename(house = NAMELSAD)|> 
@@ -262,7 +265,7 @@ Conducting a spatial join in QGIS between the 652 identified parcels and the Nor
 ```{r}
 #| label: fig-nova-count
 
-nova_zoning <- st_read("data/nova_faith_zoning.gpkg")|> 
+nova_zoning <- st_read("data/nova_faith_zoning.gpkg", quiet = TRUE)|> 
   st_drop_geometry() |> 
   distinct(ll_uuid, .keep_all = TRUE)
 
@@ -285,7 +288,7 @@ ggplot(count_type_area,
 ```{r}
 #| label: fig-nova-acres
 
-nova_zoning <- st_read("data/nova_faith_zoning.gpkg")|> 
+nova_zoning <- st_read("data/nova_faith_zoning.gpkg", quiet = TRUE)|> 
   st_drop_geometry() |> 
   distinct(ll_uuid, .keep_all = TRUE)
 
