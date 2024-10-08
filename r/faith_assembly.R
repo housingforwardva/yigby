@@ -5,36 +5,36 @@ library(scales)
 library(rmapshaper)
 
 
-hdistricts <- geojson_sf("data/faith_gen_assembly.geojson") |> 
-  st_drop_geometry() |> 
-  rename(house = NAMELSAD)|> 
-  rename(senate = NAMELSAD_2) |> 
-  distinct(ll_uuid, .keep_all = TRUE)
-
-faith_summary_ga <- hdistricts |> 
-  group_by(house) |> 
-  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
-            avg_parcel_size = mean(acres),
-            med_parcel_size = median(acres),
-            count = as.numeric(n_distinct(ll_uuid)))
-
-write_csv(faith_summary_ga, "data/faith_house.csv")
-
-
-sdistricts <- geojson_sf("data/faith_gen_assembly.geojson") |> 
-  st_drop_geometry() |> 
-  rename(house = NAMELSAD)|> 
-  rename(senate = NAMELSAD_2) |> 
-  distinct(ll_uuid, .keep_all = TRUE)
-
-faith_summary_ga <- sdistricts |> 
-  group_by(senate) |> 
-  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
-            avg_parcel_size = mean(acres),
-            med_parcel_size = median(acres),
-            count = as.numeric(n_distinct(ll_uuid)))
-
-write_csv(faith_summary_ga, "data/faith_senate.csv")
+# hdistricts <- geojson_sf("data/faith_gen_assembly.geojson") |> 
+#   st_drop_geometry() |> 
+#   rename(house = NAMELSAD)|> 
+#   rename(senate = NAMELSAD_2) |> 
+#   distinct(ll_uuid, .keep_all = TRUE)
+# 
+# faith_summary_ga <- hdistricts |> 
+#   group_by(house) |> 
+#   summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+#             avg_parcel_size = mean(acres),
+#             med_parcel_size = median(acres),
+#             count = as.numeric(n_distinct(ll_uuid)))
+# 
+# write_csv(faith_summary_ga, "data/faith_house.csv")
+# 
+# 
+# sdistricts <- geojson_sf("data/faith_gen_assembly.geojson") |> 
+#   st_drop_geometry() |> 
+#   rename(house = NAMELSAD)|> 
+#   rename(senate = NAMELSAD_2) |> 
+#   distinct(ll_uuid, .keep_all = TRUE)
+# 
+# faith_summary_ga <- sdistricts |> 
+#   group_by(senate) |> 
+#   summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+#             avg_parcel_size = mean(acres),
+#             med_parcel_size = median(acres),
+#             count = as.numeric(n_distinct(ll_uuid)))
+# 
+# write_csv(faith_summary_ga, "data/faith_senate.csv")
 
 
 
