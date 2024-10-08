@@ -586,7 +586,8 @@ ggplot(count_type_area,
   scale_y_continuous(
     labels = number_format(big.mark = ","),
     expand = expansion(mult = c(0, 0.01)),
-    limits = c(0, 250))
+    limits = c(0, 250)) +
+  labs(title = "Total faith-owned parcels by jurisdiction")
 
 ```
 
@@ -626,7 +627,9 @@ ggplot(count_type_area,
   theme(
     panel.grid.major.y = element_blank(),
     panel.grid.major.x = element_line(linewidth = 0.5)
-    )
+    ) +
+  labs(
+    title = "Total acres of faith-owned parcels by jurisdiction")
 
 
 ```
@@ -743,7 +746,8 @@ ggplot(pct_bar,
   theme(
     panel.grid.major.y = element_blank(),
     panel.grid.major.x = element_line(linewidth = 0.5)
-    )
+    ) +
+  labs(title = "Percent of faith-owned parcels zoned for by-right multifamily")
 
 ```
 
