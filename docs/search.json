@@ -74,6 +74,6 @@
     "href": "part-2.html#northern-virginia",
     "title": "2  Findings",
     "section": "2.3 Northern Virginia",
-    "text": "2.3 Northern Virginia\nConducting a spatial join in QGIS between the 652 identified parcels and the Northern Virginia Zoning Atlas resulted in 648 parcels retained. The four parcels that were removed were located in areas not covered by the Virginia Zoning Atlas, most likely to the area being deemed protected or undevelopable.\n\n\n\n\n\nFigure 2.6: ?(caption)\n\n\n\n\n\n\nfunction (x) \n{\n    number(x, accuracy = accuracy, scale = scale, prefix = prefix, \n        suffix = suffix, big.mark = big.mark, decimal.mark = decimal.mark, \n        style_positive = style_positive, style_negative = style_negative, \n        scale_cut = scale_cut, trim = trim, ...)\n}\n<bytecode: 0x0000019d9ca2d450>\n<environment: 0x0000019d9d87adb8>\n\n\n\n\n\nFigure 2.7: ?(caption)\n\n\n\n\n\n\n?(caption)\n\n\n\n\n\n\n\n\n\n\n\n?(caption)"
+    "text": "2.3 Northern Virginia\nConducting a spatial join in QGIS between the 652 identified parcels and the Northern Virginia Zoning Atlas resulted in 648 parcels retained. The four parcels that were removed were located in areas not covered by the Virginia Zoning Atlas, most likely to the area being deemed protected or undevelopable.\n\n\n\n\n\nFigure 2.6: ?(caption)\n\n\n\n\n\n\n\n\n\nFigure 2.7: ?(caption)\n\n\n\n\n\n\n?(caption)\n\n\n\n\n\n\n\n\n\n\n\n?(caption)"
   }
 ]

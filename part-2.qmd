@@ -572,8 +572,21 @@ count_type_area <- nova_zoning |>
 ggplot(count_type_area,
        aes(x = reorder(jurisdiction_2, count),
            y = count)) +
-  geom_col() +
-  coord_flip()
+  geom_col(
+    fill = "#40c0c0"
+  ) +
+  geom_text(aes(
+    label = comma(count), 
+    hjust = -0.1
+    )) +
+  coord_flip() +
+  theme_hfv(
+    base_size = 10
+    ) +
+  scale_y_continuous(
+    labels = number_format(big.mark = ","),
+    expand = expansion(mult = c(0, 0.01)),
+    limits = c(0, 250))
 
 ```
 
@@ -587,7 +600,7 @@ nova_zoning <- st_read("data/nova_faith_zoning.gpkg", quiet = TRUE)|>
 count_type_area <- nova_zoning |> 
   drop_na(jurisdiction_2) |> 
   group_by(jurisdiction_2) |> 
-  summarise(acres = sum(acres),
+  summarise(acres = round(sum(acres), digits = 2),
             count = n_distinct(ll_uuid)
             ) 
 
@@ -598,7 +611,7 @@ ggplot(count_type_area,
     fill = "#40c0c0"
   ) +
   geom_text(aes(
-    label = acres, 
+    label = comma(acres), 
     hjust = -0.1
     )) +
   coord_flip() +
@@ -607,14 +620,15 @@ ggplot(count_type_area,
     ) +
   scale_y_continuous(
     labels = number_format(big.mark = ","),
-    expand = expansion(mult = c(0, 0.01))
+    expand = expansion(mult = c(0, 0.01)),
+    limits = c(0, 1500)
     ) +
   theme(
     panel.grid.major.y = element_blank(),
     panel.grid.major.x = element_line(linewidth = 0.5)
     )
 
-number_format()
+
 ```
 
 ```{r}
