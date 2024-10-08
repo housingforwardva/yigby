@@ -10,6 +10,9 @@ library(sf)
 library(geojsonsf)
 library(ggtext)
 library(scales)
+library(leaflet)
+library(htmlwidgets)
+library(classInt)
 
 ```
 
@@ -214,46 +217,282 @@ faith_summary_local |>
 
 ## General Assembly Districts
 
+The introduction of the Faith in Housing bill into the Virginia General Assembly presents an opportunity to also explore faith-based parcel ownership at based on house and senate districts. This provides state legislatures with a unique perspective on aspects of faith-based parcel ownership within their districts. 
+
+
+
+### House Districts
+
 ```{r}
-#| label: fig-parcels-ga
-#| fig-cap: "Total acres by Sentate District"
-#| eval: false
-
-# There are too many house districts to make a decent bar chart. It would be best
-# to create a choropleth map of the House Districts.
-
-hdistricts <- geojson_sf("data/faith_gen_assembly.geojson") |> 
-  st_drop_geometry() |> 
-  rename(house = NAMELSAD)|> 
-  rename(senate = NAMELSAD_2) |> 
-  st_drop_geometry() |> 
-  distinct(ll_uuid, .keep_all = TRUE)
-
-faith_summary_ga <- hdistricts |> 
-  group_by(house) |> 
-  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
-            avg_parcel_size = mean(acres),
-            count = as.numeric(n_distinct(ll_uuid)))
-
-# sum(faith_summary_pdc$total_acres)
-
-ggplot(faith_summary_ga,
-       aes(x = reorder(house, total_acres),
-           y = total_acres)) +
-  geom_point(fill = "#011E41") +
-  geom_text(
-    aes(label = scales::comma(round(total_acres, 0))), 
-    color = "#011E41", 
-    hjust = -0.2
-    ) +
-  coord_flip() +
-  theme_hfv() +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-  labs(title = "Total acres of faith-based owned land by House District",
-       caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset.")
+#| label: fig-parcels-hd
+#| fig-cap: "Total parcels by House District"
 
 
+hd <- geojson_sf("data/geo/faith_house_clip.geojson") |> 
+  mutate(across(3:5, .fns = ~as.numeric(.x))) |> 
+  mutate(label_count = comma(faith_house_count)) |> 
+  mutate(NAMELSAD = str_remove(NAMELSAD, "State House District ")) 
 
+
+# Function to create color palette based on Jenks breaks
+create_jenks_palette <- function(data, n_classes = 5) {
+  # Remove any NA values
+  data <- data[!is.na(data)]
+  
+  # Calculate Jenks breaks
+  breaks <- classIntervals(data, n = n_classes, style = "jenks")
+  
+  # Create a color palette
+  pal <- colorBin(
+    palette = "YlOrRd",
+    domain = data,
+    bins = breaks$brks,
+    pretty = FALSE
+  )
+  
+  return(pal)
+}
+
+# Create the Jenks breaks color palette
+jenks_pal <- create_jenks_palette(hd$faith_house_count)
+  
+
+# Create the leaflet map
+map_jenks <- leaflet(hd) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(
+    fillColor = ~jenks_pal(faith_house_count),
+    fillOpacity = 0.7,
+    color = "grey",
+    weight = 1,
+    popup = ~paste("House District:", NAMELSAD, "<br>Parcels:", label_count)
+  ) %>%
+  addLegend(
+    pal = jenks_pal,
+    values = hd$faith_house_count,
+    title = "Total Parcels",
+    position = "topleft"
+  )
+
+saveWidget(map_jenks, "data/geo/hd_count.html")
+
+# Display the map
+
+knitr::include_url("data/geo/hd_count.html", height = "500px")
+
+
+```
+
+
+```{r}
+#| label: fig-acres-hd
+#| fig-cap: "Total acres by House District"
+
+
+hd <- geojson_sf("data/geo/faith_house_clip.geojson") |> 
+  mutate(across(3:5, .fns = ~as.numeric(.x))) |> 
+  mutate(NAMELSAD = str_remove(NAMELSAD, "State House District ")) |> 
+  mutate(faith_house_total_acres = round(faith_house_total_acres, digits = 2)) |> 
+  mutate(label_acres = paste(comma((faith_house_total_acres)), "acres", sep = " "))
+
+# Function to create color palette based on Jenks breaks
+create_jenks_palette <- function(data, n_classes = 5) {
+  # Remove any NA values
+  data <- data[!is.na(data)]
+  
+  # Calculate Jenks breaks
+  breaks <- classIntervals(data, n = n_classes, style = "jenks")
+  
+  # Create a color palette
+  pal <- colorBin(
+    palette = "YlGn",
+    domain = data,
+    bins = breaks$brks,
+    pretty = FALSE
+  )
+  
+  return(pal)
+}
+
+# Create the Jenks breaks color palette
+jenks_pal <- create_jenks_palette(hd$faith_house_total_acres)
+
+# Create the leaflet map
+map_jenks <- leaflet(hd) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(
+    fillColor = ~jenks_pal(faith_house_total_acres),
+    fillOpacity = 0.7,
+    color = "grey",
+    weight = 1,
+    popup = ~paste("House District:", NAMELSAD, "<br>Value:", label_acres)
+  ) %>%
+  addLegend(
+    pal = jenks_pal,
+    values = hd$faith_house_total_acres,
+    title = "Total Acres",
+    position = "topleft"
+  )
+
+# Display the map
+map_jenks
+
+```
+
+```{r}
+#| label: fig-acres-hd
+#| fig-cap: "Median parcel size by House District"
+
+
+hd <- read_rds("data/rds/faith_house.rds")
+
+# Function to create color palette based on Jenks breaks
+create_jenks_palette <- function(data, n_classes = 5) {
+  # Remove any NA values
+  data <- data[!is.na(data)]
+  
+  # Calculate Jenks breaks
+  breaks <- classIntervals(data, n = n_classes, style = "jenks")
+  
+  # Create a color palette
+  pal <- colorBin(
+    palette = "YlGnBu",
+    domain = data,
+    bins = breaks$brks,
+    pretty = FALSE
+  )
+  
+  return(pal)
+}
+
+# Create the Jenks breaks color palette
+jenks_pal <- create_jenks_palette(hd$med_parcel_size)
+
+# Create the leaflet map
+map_jenks <- leaflet(hd) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(
+    fillColor = ~jenks_pal(med_parcel_size),
+    fillOpacity = 0.7,
+    color = "grey",
+    weight = 1,
+    popup = ~paste("House District:", NAMELSAD, "<br>Value:", label_size)
+  ) %>%
+  addLegend(
+    pal = jenks_pal,
+    values = hd$med_parcel_size,
+    title = "Median Parcel Size",
+    position = "topleft"
+  )
+
+# Display the map
+map_jenks
+
+```
+
+### Senate Districts
+
+```{r}
+#| label: fig-parcels-sd
+#| fig-cap: "Total parcels by Senate District"
+
+sd <- read_rds("data/rds/faith_senate.rds")
+
+# Function to create color palette based on Jenks breaks
+create_jenks_palette <- function(data, n_classes = 5) {
+  # Remove any NA values
+  data <- data[!is.na(data)]
+  
+  # Calculate Jenks breaks
+  breaks <- classIntervals(data, n = n_classes, style = "jenks")
+  
+  # Create a color palette
+  pal <- colorBin(
+    palette = "YlOrRd",
+    domain = data,
+    bins = breaks$brks,
+    pretty = FALSE
+  )
+  
+  return(pal)
+}
+
+# Create the Jenks breaks color palette
+jenks_pal <- create_jenks_palette(sd$faith_senate_count)
+  
+
+# Create the leaflet map
+map_jenks <- leaflet(sd) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(
+    fillColor = ~jenks_pal(faith_senate_count),
+    fillOpacity = 0.7,
+    color = "grey",
+    weight = 1,
+    popup = ~paste("Senate District:", NAMELSAD, "<br>Parcels:", label_count)
+  ) %>%
+  addLegend(
+    pal = jenks_pal,
+    values = sd$faith_senate_count,
+    title = "Total Parcels",
+    position = "topleft"
+  )
+
+# Display the map
+map_jenks
+
+
+```
+
+
+```{r}
+#| label: fig-acres-hd
+#| fig-cap: "Median parcel size by Senate District"
+
+
+sd <- read_rds("data/rds/faith_senate.rds")
+
+# Function to create color palette based on Jenks breaks
+create_jenks_palette <- function(data, n_classes = 5) {
+  # Remove any NA values
+  data <- data[!is.na(data)]
+  
+  # Calculate Jenks breaks
+  breaks <- classIntervals(data, n = n_classes, style = "jenks")
+  
+  # Create a color palette
+  pal <- colorBin(
+    palette = "YlGnBu",
+    domain = data,
+    bins = breaks$brks,
+    pretty = FALSE
+  )
+  
+  return(pal)
+}
+
+# Create the Jenks breaks color palette
+jenks_pal <- create_jenks_palette(sd$med_parcel_size)
+
+# Create the leaflet map
+map_jenks <- leaflet(sd) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(
+    fillColor = ~jenks_pal(med_parcel_size),
+    fillOpacity = 0.7,
+    color = "grey",
+    weight = 1,
+    popup = ~paste("Senate District:", NAMELSAD, "<br>Value:", label_size)
+  ) %>%
+  addLegend(
+    pal = jenks_pal,
+    values = sd$med_parcel_size,
+    title = "Median Parcel Size",
+    position = "topleft"
+  )
+
+# Display the map
+map_jenks
 
 ```
 
