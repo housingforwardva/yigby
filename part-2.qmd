@@ -228,11 +228,7 @@ The introduction of the Faith in Housing bill into the Virginia General Assembly
 #| fig-cap: "Total parcels by House District"
 
 
-hd <- geojson_sf("data/geo/faith_house_clip.geojson") |> 
-  mutate(across(3:5, .fns = ~as.numeric(.x))) |> 
-  mutate(label_count = comma(faith_house_count)) |> 
-  mutate(NAMELSAD = str_remove(NAMELSAD, "State House District ")) 
-
+hd <- read_rds("data/rds/faith_house.rds")
 
 # Function to create color palette based on Jenks breaks
 create_jenks_palette <- function(data, n_classes = 5) {
@@ -289,11 +285,7 @@ knitr::include_url("data/geo/hd_count.html", height = "500px")
 #| fig-cap: "Total acres by House District"
 
 
-hd <- geojson_sf("data/geo/faith_house_clip.geojson") |> 
-  mutate(across(3:5, .fns = ~as.numeric(.x))) |> 
-  mutate(NAMELSAD = str_remove(NAMELSAD, "State House District ")) |> 
-  mutate(faith_house_total_acres = round(faith_house_total_acres, digits = 2)) |> 
-  mutate(label_acres = paste(comma((faith_house_total_acres)), "acres", sep = " "))
+hd <- read_rds("data/rds/faith_house.rds")
 
 # Function to create color palette based on Jenks breaks
 create_jenks_palette <- function(data, n_classes = 5) {
@@ -335,12 +327,15 @@ map_jenks <- leaflet(hd) %>%
   )
 
 # Display the map
-map_jenks
+saveWidget(map_jenks, "data/geo/hd_acres.html")
+
+knitr::include_url("data/geo/hd_acres.html", height = "500px")
+
 
 ```
 
 ```{r}
-#| label: fig-acres-hd
+#| label: fig-size-hd
 #| fig-cap: "Median parcel size by House District"
 
 
@@ -386,7 +381,9 @@ map_jenks <- leaflet(hd) %>%
   )
 
 # Display the map
-map_jenks
+saveWidget(map_jenks, "data/geo/hd_size.html")
+
+knitr::include_url("data/geo/hd_size.html", height = "500px")
 
 ```
 
@@ -439,14 +436,68 @@ map_jenks <- leaflet(sd) %>%
   )
 
 # Display the map
-map_jenks
+saveWidget(map_jenks, "data/geo/sd_count.html")
 
+knitr::include_url("data/geo/sd_count.html", height = "500px")
+```
+
+```{r}
+#| label: fig-acres-sd
+#| fig-cap: "Total acres by Senate District"
+
+
+sd <- read_rds("data/rds/faith_senate.rds")
+
+# Function to create color palette based on Jenks breaks
+create_jenks_palette <- function(data, n_classes = 5) {
+  # Remove any NA values
+  data <- data[!is.na(data)]
+  
+  # Calculate Jenks breaks
+  breaks <- classIntervals(data, n = n_classes, style = "jenks")
+  
+  # Create a color palette
+  pal <- colorBin(
+    palette = "YlGn",
+    domain = data,
+    bins = breaks$brks,
+    pretty = FALSE
+  )
+  
+  return(pal)
+}
+
+# Create the Jenks breaks color palette
+jenks_pal <- create_jenks_palette(hd$faith_senate_total_acres)
+
+# Create the leaflet map
+map_jenks <- leaflet(sd) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(
+    fillColor = ~jenks_pal(faith_senate_total_acres),
+    fillOpacity = 0.7,
+    color = "grey",
+    weight = 1,
+    popup = ~paste("Senate District:", NAMELSAD, "<br>Value:", label_acres)
+  ) %>%
+  addLegend(
+    pal = jenks_pal,
+    values = sd$faith_senate_total_acres,
+    title = "Total Acres",
+    position = "topleft"
+  )
+
+# Display the map
+saveWidget(map_jenks, "data/geo/sd_acres.html")
+
+knitr::include_url("data/geo/sd_acres.html", height = "500px")
 
 ```
 
 
+
 ```{r}
-#| label: fig-acres-hd
+#| label: fig-size-sd
 #| fig-cap: "Median parcel size by Senate District"
 
 
@@ -492,7 +543,9 @@ map_jenks <- leaflet(sd) %>%
   )
 
 # Display the map
-map_jenks
+saveWidget(map_jenks, "data/geo/sd_size.html")
+
+knitr::include_url("data/geo/sd_size.html", height = "500px")
 
 ```
 

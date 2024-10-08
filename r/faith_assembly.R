@@ -2,6 +2,7 @@ library(tidyverse)
 library(sf)
 library(geojsonsf)
 library(scales)
+library(rmapshaper)
 
 
 hdistricts <- geojson_sf("data/faith_gen_assembly.geojson") |> 
@@ -38,6 +39,7 @@ write_csv(faith_summary_ga, "data/faith_senate.csv")
 
 
 hd <- geojson_sf("data/geo/faith_house_clip.geojson") |> 
+  ms_simplify(keep = 0.1, keep_shapes = TRUE) |> 
   mutate(across(3:5, .fns = ~as.numeric(.x))) |> 
   mutate(label_count = comma(faith_house_count)) |> 
   mutate(NAMELSAD = str_remove(NAMELSAD, "State House District ")) |> 
@@ -62,6 +64,7 @@ write_rds(hd, "data/rds/faith_house.rds")
 
 
 sd <- geojson_sf("data/geo/faith_senate_clip.geojson") |> 
+  ms_simplify(keep = 0.1, keep_shapes = TRUE) |> 
   mutate(across(3:5, .fns = ~as.numeric(.x))) |> 
   mutate(label_count = comma(faith_senate_count)) |> 
   mutate(NAMELSAD = str_remove(NAMELSAD, "State Senate District ")) |> 
