@@ -33,7 +33,7 @@ book:
     name: "HousingForward Virginia"
     url: https://www.housingforwardva.org
   sidebar: 
-    # logo: "img/vza.png"
+    logo: "img/vif_hfv.png"
     search: true
   # downloads: pdf 
   date: today
