@@ -17,7 +17,7 @@ library(htmltools)
 
 ```
 
-## Findings
+## Summary
 
 Out of the over 4 million parcels in Virginia, 22,453 were identified as likely owned by a faith-based organization --- with a 95% confidence level that the true accuracy of the entire dataset lies between 99.03% and 100%. These findings were based on a keyword search with a process of retention and elimination based on known faith-based and secular entities. Some faith-based properties could be absent from the analysis due to terms or phrases not accounted for. However, the following represents a significant, if not an overwhelming majority, of parcels owned by faith-based organizations in the Commonwealth of Virginia. In total, these parcels amount to 74,116 acres of land. To put this into context, the City of Richmond is roughly 40,000 acres, meaning the identified parcels amount to nearly twice the size of Richmond.
 
@@ -237,7 +237,7 @@ ggplot(faith_summary_local,
        aes(x = reorder(jurisdiction, med_parcel_size),
            y = med_parcel_size,
            fill = pdc)) +
-  geom_col() +
+  geom_col(fill = "#40c0c0") +
   geom_text(aes(label = med_parcel_size), color = "#FFFFFF", hjust = 1.1) +
   coord_flip() +
   theme_hfv()
@@ -248,7 +248,7 @@ The top ten organizations who own the most land in jurisdictions along the I-95/
 
 ```{r}
 #| label: fig-local-own
-#| fig-cap: "Top 5: Parcel count by owners in "
+#| fig-cap: "Top 5: Parcel count by owners in regions along I-95/I-64 "
 
 faith_mapped <- read_rds("data/faith_mapped.rds")|> 
   st_drop_geometry() |> 
@@ -814,7 +814,8 @@ For a majority of parcels in the region, many could be redeveloped as single-fam
 The figure below specifically focuses on by-right multifamily housing. As mentioned before, the number for Alexandria could change pending a court case, while the Arlington number will have certainly changed and will require a reversion to the previous zoning ordinance without the most recent Missing Middle amendments. Following these two localities, the City of Falls Church allows for 44 percent of identified faith-owned parcels to be developed as multifamily housing by-right. These figures decrease across the remaining jurisdictions with some not allowing for any faith-owned parceled to be developed by-right as multifamily housing.
 
 ```{r}
-#| label: tbl-pct-2
+#| label: fig-pct-2
+#| fig-cap: "Percent of parcels zoned by-right for multifamily housing"
 
 
 pct_bar <- read_rds("data/rds/nova_byright_table.rds") |> 
