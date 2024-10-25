@@ -21,6 +21,85 @@ library(htmltools)
 
 Out of the over 4 million parcels in Virginia, 22,453 were identified as likely owned by a faith-based organization --- with a 95% confidence level that the true accuracy of the entire dataset lies between 99.03% and 100%. These findings were based on a keyword search with a process of retention and elimination based on known faith-based and secular entities. Some faith-based properties could be absent from the analysis due to terms or phrases not accounted for. However, the following represents a significant, if not an overwhelming majority, of parcels owned by faith-based organizations in the Commonwealth of Virginia. In total, these parcels amount to 74,116 acres of land. To put this into context, the City of Richmond is roughly 40,000 acres, meaning the identified parcels amount to nearly twice the size of Richmond.
 
+A histogram of the lot sizes of the 22,453 parcels shows that an overwhelming majority of these parcels are more than a tenth of an acre (4,356 square feet). The Faith in Housing legislation would encourage multifamily development whose lot size requirements depend on a variety of factors. The legislation introduced in 2024 allowed for a density of 40 units per acre and a height of one story or 15 feet above the maximum height where a locality's zoning does not already permit residential uses. The median lot size is 23,509 square feet, which is approximately 0.53 acres. In many circumstances, this lot size is only viable for a small multifamily building of less than 20 units, particularly in urban areas served by public water and sewer. However, half of the parcels identified are larger than 0.53 acres, meaning that there is a significant number of parcels viable for larger scale multifamily development based on lot size.
+
+```{r}
+#| label: fig-lots
+#| fig-cap: "Lot Size Distribution"
+
+faith_mapped <- read_rds("data/faith_mapped.rds") |> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  mutate(pdc = case_when(
+    jurisdiction == "Franklin County" ~ "Roanoke Valley-Alleghany",
+    TRUE ~ pdc
+  ))
+
+median_lot <- median(faith_mapped$acres)
+median_label <- ifelse(median_lot < 1,
+                      paste0(round(median_lot * 43560), " sq ft"),
+                      paste(round(median_lot, 1), " acres"))
+
+ggplot(faith_mapped,
+       aes(
+         x = acres
+       ))+
+  # Histogram bars
+  geom_histogram(
+    bins = 40,
+    fill = "#011E41",
+    color = "white",
+    alpha = 0.7
+  ) +
+  # Density curve with much lower scaling factor
+  geom_density(aes(y = ..count.. * 2), # Reduced scaling factor significantly
+              color = "#40c0c0", 
+              size = 1,
+              alpha = 0.8) +
+  # Improved x-axis scale
+  scale_x_log10(
+    breaks = c(0.1, 0.25, 0.5, 1, 2.5, 5, 10, 25, 50, 100, 250, 500),
+    labels = function(x) ifelse(x < 1, 
+                               paste0(round(x * 43560), " sq ft"),
+                               paste(x, "acres")),
+    expand = expansion(mult = c(0.02, 0.02))
+  ) +
+  # Y-axis with appropriate scale
+  scale_y_continuous(
+    breaks = seq(0, 25000, by = 5000),
+    labels = label_number(big.mark = ","),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  # Labels and title
+  labs(
+    title = "Distribution of Lot Sizes",
+    subtitle = "Small lots shown in square feet, larger lots in acres",
+    x = "Lot Size",
+    y = "Number of Properties"
+  ) +
+  theme_hfv() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.x = element_line(color = "gray90", size = 0.5),
+    panel.grid.major.y = element_line(color = "gray90", size = 0.5)
+  ) +
+  # Add vertical line for median
+  geom_vline(xintercept = median_lot,
+             color = "#8B85CA",
+             linetype = "dashed",
+             size = 1) +
+  # Add median label
+  annotate("text",
+           x = median_lot,
+           y = max(hist(faith_mapped$acres, breaks = 40, plot = FALSE)$counts) * 0.95,
+           label = paste("Median:", median_label),
+           color = "#8B85CA",
+           hjust = -0.1,
+           fontface = "bold")
+
+
+```
+
 ### By Planning District Commission
 
 To investigate geographic patterns further, HFV utilized Virginia's 21 planning district commissions (PDCs) to assign parcels to a geographic region. This is helpful because not all jurisdictions in Virginia are part of a metropolitan or micropolitan statistical area, whereas all jurisdictions are represented by at least one of the 21 PDCs. In addition, PDC boundaries represent an area wherein there are distinct socioeconomic patterns.
@@ -632,7 +711,111 @@ The data presented above represents a snapshot of faith-owned parcels by Virgini
 
 The Virginia Zoning Atlas presents a unique opportunity to leverage research already conducted by HousingForward Virginia and the Mercatus Center at George Mason University. With the Virginia Zoning Atlas, parcels identified can be associated with their respective zoning districts and the rules governing residential development on them.
 
-Conducting a spatial join in QGIS between the 652 identified parcels and the Northern Virginia Zoning Atlas resulted in 648 parcels retained. The four parcels that were removed were located in areas not covered by the Virginia Zoning Atlas, most likely to the area being deemed protected or undevelopable.
+Conducting a spatial join in QGIS between the 652 identified parcels and the Northern Virginia Zoning Atlas resulted in 648 parcels retained. The four parcels that were removed were located in areas not covered by the Virginia Zoning Atlas, most likely to the area being deemed protected or undevelopable. The median lot size among these 648 parcels is 25,723 square feet (0.59 acres). The number of parcels that are one acre or greater is 255, which is 39% of all parcels.
+
+```{r}
+#| label: fig-lots-nv
+#| fig-cap: "Lot Size Distribution in NVRC region"
+
+faith_mapped <- st_read("data/nova_faith_zoning.gpkg", quiet = TRUE)|> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE)
+
+median_lot <- median(faith_mapped$acres)
+median_label <- ifelse(median_lot < 1,
+                      paste0(round(median_lot * 43560), " sq ft"),
+                      paste(round(median_lot, 1), " acres"))
+
+ggplot(faith_mapped,
+       aes(
+         x = acres
+       ))+
+  # Histogram bars
+  geom_histogram(
+    bins = 40,
+    fill = "#011E41",
+    color = "white",
+    alpha = 0.7
+  ) +
+  # Density curve with much lower scaling factor
+  geom_density(aes(y = ..count.. * 2), # Reduced scaling factor significantly
+              color = "#40c0c0", 
+              size = 1,
+              alpha = 0.8) +
+  # Improved x-axis scale
+  scale_x_log10(
+    breaks = c(0.1, 0.25, 0.5, 1, 2.5, 5, 10, 25, 50, 100, 250, 500),
+    labels = function(x) ifelse(x < 1, 
+                               paste0(round(x * 43560), " sq ft"),
+                               paste(x, "acres")),
+    expand = expansion(mult = c(0.02, 0.02))
+  ) +
+  # Y-axis with appropriate scale
+  scale_y_continuous(
+    breaks = seq(0, 25000, by = 5000),
+    labels = label_number(big.mark = ","),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  # Labels and title
+  labs(
+    title = "Distribution of Lot Sizes in NVRC region",
+    subtitle = "Small lots shown in square feet, larger lots in acres",
+    x = "Lot Size",
+    y = "Number of Properties"
+  ) +
+  theme_hfv() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.x = element_line(color = "gray90", size = 0.5),
+    panel.grid.major.y = element_line(color = "gray90", size = 0.5)
+  ) +
+  # Add vertical line for median
+  geom_vline(xintercept = median_lot,
+             color = "#8B85CA",
+             linetype = "dashed",
+             size = 1) +
+  # Add median label
+  annotate("text",
+           x = median_lot,
+           y = max(hist(faith_mapped$acres, breaks = 40, plot = FALSE)$counts) * 0.95,
+           label = paste("Median:", median_label),
+           color = "#8B85CA",
+           hjust = -0.1,
+           fontface = "bold")
+
+
+```
+
+Based on the Virginia Zoning Atlas analysis, multifamily housing is prohibited on 422 of the identified parcels. A public hearing is required for multifamily housing development on 21 of those parcels, and it is allowed on 205 parcels by-right. If enacted as originally introduced in 2024, the Faith in Housing legislation could impact 443 parcels in the Northern Virginia Regional Commission service area (68% of identified parcels).
+
+```{r}
+#| label: fig-zoned-mf
+#| fig-cap: "NVRC parcels by multifamily zoning treatment"
+
+faith_mapped <- st_read("data/nova_faith_zoning.gpkg", quiet = TRUE)|> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  drop_na(family4_treatment)
+
+mf <- faith_mapped |> 
+  select(ll_uuid, family4_treatment) |> 
+  mutate(count = 1) |> 
+  group_by(family4_treatment) |> 
+  summarise(count = sum(count)) |> 
+  mutate(family4_treatment = str_to_sentence(family4_treatment))
+
+ggplot(mf, 
+       aes(
+         x = reorder(family4_treatment, count),
+         y = count,
+         fill = family4_treatment
+           )) +
+  geom_col() +
+  theme_hfv(base_size = 10) +
+  scale_fill_hfv() +
+  labs(title = "NVRC parcels by multifamily zoning treatment")
+
+```
 
 The graph below shows the number of faith-owned parcels in each jurisdiction within the Northern Virginia Regional Commission's footprint. Prince William County contains the most faith-owned parcels at 214, followed by Alexandria at 107. The fewest parcels are mainly within smaller towns, but also the City of Manassas Park.
 
