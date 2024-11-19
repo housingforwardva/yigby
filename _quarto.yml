@@ -12,7 +12,7 @@ format:
       - lumen
       - custom.scss
     grid: 
-      sidebar-width: 350px
+      sidebar-width: 275px
     fontsize: "100%"
     # template-partials:
     #   - toc.html
@@ -39,13 +39,9 @@ book:
   date: today
   chapters:
     - index.qmd 
-    - part: "Introduction"
-      chapters:
-        - part-1.qmd # Introduction
-    - part: "Findings"
-      chapters:
-        - part-2.qmd # Summary
-  # - part: "Appendix"
+    - intro.qmd # Introduction
+    - methods.qmd # Methods
+    - findings.qmd # Findings
 
 knitr:
   opts_chunk: 

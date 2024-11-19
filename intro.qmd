@@ -1,0 +1,27 @@
+# Introduction {intro}
+
+```{r}
+#| label: setup
+
+# library(tidyverse)
+
+```
+
+## Goal
+
+The goal of this investigation is to estimate the number and characteristics of properties owned by faith-based organizations in Virginia. The findings will help inform policy related to the development of affordable housing on these parcels.
+
+## Background
+
+[Senate Bill 233](https://legacylis.virginia.gov/cgi-bin/legp604.exe?241+sum+SB233), which aimed to grant religious organizations certain powers to overcome local zoning barriers for affordable housing development on their own land, was continued in committee by the Virginia Senate during the 2024 General Assembly Session.
+
+In response, a coalition led by the Virginia Interfaith Center for Public Policy has formed to explore future legislative strategies. This research project will provide essential data on the scope and scale of faith-based property ownership across Virginia to guide and substantiate new policy proposals.
+
+## Research
+
+The primary objectives of this research are to identify and examine properties owned by faith-based organizations in Virginia, determining:
+
+-   Total number and acreage of parcels
+-   Number of parcels by region
+-   Proportion of undeveloped vs. actively used properties
+-   Development potential based on current zoning (for a representative sample of properties)
