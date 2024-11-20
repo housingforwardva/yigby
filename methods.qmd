@@ -57,7 +57,7 @@ keywords |>
   kbl(col.names = NULL) |> 
   kable_styling(bootstrap_options = c("condensed"),
                 full_width = FALSE,
-                font_size = 10)
+                font_size = 11)
 
 ```
 
