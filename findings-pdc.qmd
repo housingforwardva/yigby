@@ -27,13 +27,11 @@ faith_mapped <- read_rds("data/faith_mapped.rds") |>
 To investigate geographic patterns further, HFV utilized Virginia's 21 planning district commissions (PDCs) to assign parcels to a geographic region. This is helpful because not all jurisdictions in Virginia are part of a metropolitan or micropolitan statistical area, whereas all jurisdictions are represented by at least one of the 21 PDCs. In addition, PDC boundaries represent an area wherein there are distinct socioeconomic patterns.
 
 ```{r}
-#| label: fig-pdc-map
-#| fig-cap: "Map of Virginia PDCs"
+#| label: pdc-setup
 
 # Insert map of Virginia Planning District Commissions
 
 pdc <- geojson_sf("data/geo/pdc_va.geojson") 
-
 
 # Create a custom color palette with 21 distinct colors
 colors_21 <- c(
@@ -54,8 +52,25 @@ tooltip_content <- paste0(
   "<strong>PDC:</strong> ", pdc$PDC_Primary_Name
 ) %>% lapply(HTML)
 
+faith_summary_pdc <- faith_mapped |> 
+  st_drop_geometry() |> 
+  group_by(pdc) |> 
+  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+            avg_parcel_size = mean(acres),
+            med_parcel_size = median(acres),
+            count = as.numeric(n_distinct(ll_uuid)))
+
+```
+
+::: {.content-visible when-format="html"}
+
+```{r}
+#| label: fig-pdc-map-html
+#| fig-cap: "Map of Virginia PDCs"
+#| fig-asp: 0.5
+
 # Create the leaflet map
-map <- leaflet(pdc) %>%
+map <- leaflet(pdc, options = leafletOptions()) %>%
   addProviderTiles("CartoDB.Positron") |> 
   addPolygons(
     fillColor = ~pal(PDC_Primary_Name),
@@ -87,46 +102,65 @@ map <- leaflet(pdc) %>%
 # Display the map
 map
 
+```
+
+:::
+
+::: {.content-visible unless-format="html"}
+
+```{r}
+#| label: fig-pdc-map
+#| fig-cap: "Planning District Commissions in Virginia"
+#| fig-asp: 0.55
+
+ggplot() +
+  geom_sf(
+    data = pdc,
+    aes(fill = PDC_Primary_Name),
+    color = "grey95",
+    alpha = 0.8
+  ) +
+  scale_fill_manual(values = pal(levels(factor(pdc$PDC_Primary_Name)))) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(
+    title = "Planning District Commissions in Virginia"
+  ) +
+  theme_hfv(
+    panel.grid = element_blank(),
+    axis.text = element_blank()
+  )
 
 ```
+
+:::
 
 The Hampton Roads region exceeds its peers in the number of parcels owned by faith-based organizations at 3,332. The LENOWISCO and PlanRVA regions follow at just over 1,000 fewer parcels - 2,050 and 2,006, respectively.
 
 ```{r}
 #| label: fig-pdc
-#| fig-cap: "Total faith-based owned parcels by PDC"
-
-faith_mapped <- read_rds("data/faith_mapped.rds") |> 
-  st_drop_geometry() |> 
-  distinct(ll_uuid, .keep_all = TRUE) |> 
-  mutate(pdc = case_when(
-    jurisdiction == "Franklin County" ~ "Roanoke Valley-Alleghany",
-    TRUE ~ pdc
-  ))
-
-
-faith_summary_pdc <- faith_mapped |> 
-  group_by(pdc) |> 
-  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
-            avg_parcel_size = mean(acres),
-            count = as.numeric(n_distinct(ll_uuid)))
+#| fig-cap: "Total number of faith-based owned parcels by PDC"
 
 ggplot(faith_summary_pdc,
        aes(x = reorder(pdc, count),
            y = count)) +
   geom_col(fill = "#011E41") +
   geom_text(
-    aes(label = scales::comma(round(count, 0))), 
+    aes(label = label_comma()(count)), 
     color = "#011E41", 
     hjust = -0.2
     ) +
   coord_flip() +
-  theme_hfv() +
   scale_y_continuous(
-    expand = expansion(mult = c(0, 0.1))) +
-  labs(title = "Total faith-based owned parcels",
-       caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset.")
-
+    labels = label_comma(),
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  add_zero_line() +
+  theme_hfv(flip_gridlines = T) +
+  labs(
+    title = "Total number of faith-based owned parcels by PDC",
+    caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset."
+  )
 
 ```
 
@@ -134,21 +168,7 @@ These rankings change when we look specifically at acreage. The Northern Shenand
 
 ```{r}
 #| label: fig-pdc-acres
-#| fig-cap: "Total acres of faith-based owned parcels by PDC"
-
-faith_mapped <- read_rds("data/faith_mapped.rds") |> 
-  st_drop_geometry() |> 
-  distinct(ll_uuid, .keep_all = TRUE) |> 
-  mutate(pdc = case_when(
-    jurisdiction == "Franklin County" ~ "Roanoke Valley-Alleghany",
-    TRUE ~ pdc
-  ))
-
-faith_summary_pdc <- faith_mapped |> 
-  group_by(pdc) |> 
-  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
-            avg_parcel_size = mean(acres),
-            count = as.numeric(n_distinct(ll_uuid)))
+#| fig-cap: "Total acres of faith-based owned land by PDC"
 
 # sum(faith_summary_pdc$total_acres)
 
@@ -157,15 +177,22 @@ ggplot(faith_summary_pdc,
            y = total_acres)) +
   geom_col(fill = "#011E41") +
   geom_text(
-    aes(label = scales::comma(round(total_acres, 0))), 
+    aes(label = label_comma()(total_acres)), 
     color = "#011E41", 
     hjust = -0.2
     ) +
   coord_flip() +
-  theme_hfv() +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-  labs(title = "Total acres of faith organization owned land",
-       caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset.")
+  scale_y_continuous(
+    limits = c(0, 15000),
+    labels = label_comma(),
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  add_zero_line() +
+  theme_hfv(flip_gridlines = T) +
+  labs(
+    title = "Total acres of faith-based owned land by PDC",
+    caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset."
+  )
 
 ```
 
@@ -173,34 +200,37 @@ Exploring individual parcel size gives a better understanding of opportunities f
 
 ```{r}
 #| label: fig-pdc-med-acres
-#| fig-cap: "Median parcel size by PDC"
-
-faith_mapped <- read_rds("data/faith_mapped.rds") |> 
-  st_drop_geometry() |> 
-  distinct(ll_uuid, .keep_all = TRUE) |> 
-  mutate(pdc = case_when(
-    jurisdiction == "Franklin County" ~ "Roanoke Valley-Alleghany",
-    TRUE ~ pdc
-  ))
-
-faith_summary_pdc <- faith_mapped |> 
-  group_by(pdc) |> 
-  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
-            med_parcel_size = median(acres),
-            count = as.numeric(n_distinct(ll_uuid)))
+#| fig-cap: "Median size of faith-owned parcels by PDC"
 
 ggplot(faith_summary_pdc,
        aes(x = reorder(pdc, med_parcel_size),
            y = med_parcel_size)) +
   geom_col(fill = "#40c0c0") +
-    geom_text(aes(label = round(med_parcel_size, 2)), color = "#FFFFFF", hjust = 1.1) +
+  geom_text(
+    data = . %>% filter(med_parcel_size > 0.1),
+    aes(label = label_number(accuracy = 0.01)(med_parcel_size)), 
+    color = "#FFFFFF", 
+    nudge_y = -0.07
+  ) +
+  geom_text(
+    data = . %>% filter(med_parcel_size < 0.1),
+    aes(label = label_number(accuracy = 0.01)(med_parcel_size)), 
+    color = "#40c0c0", 
+    nudge_y = 0.07
+  ) +
   coord_flip() +
-  theme_hfv() +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1)), limits = c(0,2))  +
-  labs(title = "Median parcel size of faith-based owned land by PDC",
-       caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset.")
-
-
+  scale_y_continuous(
+    limits = c(0, 1.8),
+    labels = label_number(),
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  add_zero_line() +
+  theme_hfv(flip_gridlines = T) +
+  labs(
+    title = "Median size of faith-owned parcels by PDC",
+    subtitle = "Parcel size in acres",
+    caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset."
+  )
 
 ```
 
@@ -208,40 +238,47 @@ At the local level, we can identify jurisdictions with significant acreage of fa
 
 ```{r}
 #| label: fig-local-count
-#| fig-cap: "Top 15: Median parcel size by jurisdiction"
+#| fig-cap: "Median size of faith-owned parcels by locality"
 
-faith_mapped <- read_rds("data/faith_mapped.rds")|> 
+faith_summary_local <- faith_mapped |>  
   st_drop_geometry() |> 
-  distinct(ll_uuid, .keep_all = TRUE) |> 
-  mutate(pdc = case_when(
-    jurisdiction == "Franklin County" ~ "Roanoke Valley-Alleghany",
-    TRUE ~ pdc
-  ))
-
-faith_summary_local <- faith_mapped %>% 
-  group_by(jurisdiction, pdc) %>% 
+  group_by(jurisdiction, pdc) |> 
   summarise(
     total_acres = sum(acres, na.rm = TRUE),
     med_parcel_size = median(acres, na.rm = TRUE),
     count = n_distinct(ll_uuid),
     .groups = "drop"
-  ) %>% 
+  ) |>  
   mutate(
     jurisdiction = str_remove(jurisdiction, " County"),
     total_acres = round(total_acres, 2),
     med_parcel_size = round(med_parcel_size, 2)
-  ) %>% 
-  arrange(desc(med_parcel_size)) %>%
+  ) |>  
+  arrange(desc(med_parcel_size)) |> 
   slice_head(n = 20)
 
 ggplot(faith_summary_local,
        aes(x = reorder(jurisdiction, med_parcel_size),
-           y = med_parcel_size,
-           fill = pdc)) +
+           y = med_parcel_size)) +
   geom_col(fill = "#40c0c0") +
-  geom_text(aes(label = med_parcel_size), color = "#FFFFFF", hjust = 1.1) +
+  geom_text(
+    aes(label = label_number(accuracy = 0.01)(med_parcel_size)), 
+    color = "#FFFFFF", 
+    nudge_y = -0.4
+  ) +
   coord_flip() +
-  theme_hfv()
+  scale_y_continuous(
+    limits = c(0, 8),
+    labels = label_number(),
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  add_zero_line() +
+  theme_hfv(flip_gridlines = T) +
+  labs(
+    title = "Median size of faith-owned parcels by locality",
+    subtitle = "Top 20 localities by median parcel size (acres)",
+    caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset."
+  )
 
 ```
 
@@ -249,41 +286,46 @@ The top ten organizations who own the most land in jurisdictions along the I-95/
 
 ```{r}
 #| label: tbl-local-own
-#| tbl-cap: "Top 5: Parcel count by owners in regions along I-95/I-64 "
+#| tbl-cap: "Top ten largest faith-based land owners in regions along I-95/I-64"
 
-faith_mapped <- read_rds("data/faith_mapped.rds")|> 
+faith_top_owners <- faith_mapped |> 
   st_drop_geometry() |> 
-  distinct(ll_uuid, .keep_all = TRUE) |> 
   filter(
     pdc == "Hampton Roads" | 
-      pdc == "PlanRVA" |
-      pdc == "Northern Virginia" |
-      pdc == "George Washington")
-
-faith_summary_local <- faith_mapped %>% 
-  group_by(owner, jurisdiction) %>% 
+    pdc == "PlanRVA" |
+    pdc == "Northern Virginia" |
+    pdc == "George Washington"
+  ) |> 
+  group_by(owner, jurisdiction) |>  
   summarise(
     total_acres = sum(acres, na.rm = TRUE),
     med_parcel_size = median(acres, na.rm = TRUE),
     count = n_distinct(ll_uuid),
     .groups = "drop"
-  ) %>% 
+  ) |> 
   mutate(
     jurisdiction = str_remove(jurisdiction, " County"),
     total_acres = round(total_acres, 2),
     med_parcel_size = round(med_parcel_size, 2)
-  ) %>% 
-  arrange(desc(total_acres)) %>%
+  ) |>  
+  arrange(desc(total_acres)) |> 
   slice_head(n = 10) |> 
   mutate(owner = str_to_title(owner))
 
-
-faith_summary_local |> 
-  kbl(col.names = c("Owner", "Jurisdiction", "Total Acres", "Median Parcel Size", "Number of Parcels"), align = "lcccc") |> 
-  kable_styling(bootstrap_options = c("striped", "condensed"))
-
+faith_top_owners |> 
+  kbl(
+    col.names = c(
+      "Owner", "Jurisdiction", "Total Acres",
+      "Median Parcel Size", "Parcels"
+    ),
+    align = "lcccc"
+  ) |> 
+  kable_styling(
+    bootstrap_options = c("striped", "condensed"),
+    font_size = 12
+  )
 
 ```
 
-Further exploration of ownership in specific jurisdictions of interest may yield results that would facilitate conversation about current use and future plans for parcels. The current investigation would only be enhanced with major groundtruthing efforts and outreach to individual parcel owners.
+Further exploration of ownership in specific jurisdictions of interest may yield results that would facilitate conversation about current use and future plans for parcels. The current investigation would only be enhanced with major ground-truthing efforts and outreach to individual parcel owners.
 
