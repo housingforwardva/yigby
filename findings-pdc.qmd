@@ -248,8 +248,8 @@ ggplot(faith_summary_local,
 The top ten organizations who own the most land in jurisdictions along the I-95/I-64 corridor are listed below.The Presbyterian League of the Presbytery of Eastern Virginia owns the most acreage with 12 parcels that amount to 3,429 acres in New Kent County. None of the top owners are located within a major city, but are largely in rural communities.
 
 ```{r}
-#| label: fig-local-own
-#| fig-cap: "Top 5: Parcel count by owners in regions along I-95/I-64 "
+#| label: tbl-local-own
+#| tbl-cap: "Top 5: Parcel count by owners in regions along I-95/I-64 "
 
 faith_mapped <- read_rds("data/faith_mapped.rds")|> 
   st_drop_geometry() |> 

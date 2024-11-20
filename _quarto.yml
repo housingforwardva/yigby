@@ -18,14 +18,21 @@ format:
     #   - toc.html
     toc-title: "On this page"
     html-table-processing: none
-  # pdf:
-  #   documentclass: scrreprt
-  #   mainfont: "Open Sans"
-  #   fig-pos: "H"
-  #   include-in-header:
-  #     text: |
-  #       \usepackage{float}
-  #       \raggedbottom
+  #pdf:
+  # documentclass: scrreprt
+  # mainfont: "Open Sans"
+  # fig-pos: "H"
+  # toc-depth: 2
+  # include-in-header:
+  #   text: |
+  #     \usepackage{float}
+  #     \raggedbottom
+  #docx: 
+  #  toc: true
+  #  toc-depth: 1
+  #  number-sections: true
+  #  fig-align: left
+  #  prefer-html: true
 
 book:
   title: "Faith-Based Property Ownership in Virginia"

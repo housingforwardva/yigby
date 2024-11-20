@@ -340,9 +340,3 @@ ggplot(pct_bar,
 
 ```
 
-
-## Conclusions
-
-This report represents a preliminary examination of faith-owned parcels in the Commonwealth of Virginia. With additional time and resources, a team of researchers could conduct a deeper dive to determine the potential development capacity of parcels. Such an analysis could yield a more accurate sense of the impact of the Faith in Housing Bill should property owners choose to exercise a new right to develop. 
-
-Nonetheless, the findings here represent the first attempt to identify parcels owned by faith-based organizations within the entire Commonwealth of Virginia. Over 20,000 parcels that amount to over 74,000 acres represents the potential to create two cities worth of housing should all parcels be viable for development. 
