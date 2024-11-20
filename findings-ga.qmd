@@ -24,9 +24,8 @@ The introduction of the Faith in Housing bill into the Virginia General Assembly
 Based on House Districts, the majority of faith-based parcel ownership is in southern and southwest Virginia. House Districts 45 and 46 contain the largest number of parcels owned by faith organizations, 2,080 and 1,199, respectively. They are followed by House District 49 (928 parcels).
 
 ```{r}
-# | label: fig-parcels-hd
-# | fig-cap: "Total parcels by House District"
-
+#| label: fig-parcels-hd
+#| fig-cap: "Total parcels by House District"
 
 # hd <- read_rds("data/rds/faith_house.rds")
 # 
@@ -74,9 +73,7 @@ Based on House Districts, the majority of faith-based parcel ownership is in sou
 
 # Display the map
 
-#knitr::include_url("data/geo/hd_count.html", height = "400px")
-
-knitr::include_graphics("img/vif_hfv.png")
+knitr::include_url("data/geo/hd_count.html", height = "400px")
 
 ```
 
@@ -185,7 +182,7 @@ The median parcel size can better help us understand areas where there is adequa
 # # Display the map
 # saveWidget(map_jenks, "data/geo/hd_size.html")
 
-#knitr::include_url("data/geo/hd_size.html", height = "500px")
+knitr::include_url("data/geo/hd_size.html", height = "400px")
 
 ```
 
@@ -242,7 +239,8 @@ Senate Districts undoubtedly show similar patterns as House Districts. Senate Di
 # # Display the map
 # saveWidget(map_jenks, "data/geo/sd_count.html")
 
-#knitr::include_url("data/geo/sd_count.html", height = "500px")
+knitr::include_url("data/geo/sd_count.html", height = "400px")
+
 ```
 
 Senate Districts with the largest total acreage of faith-owned parcels are Senate Districts 26 (12,598.90 acres) and 3 (6,381.74 acres). Once again, Senate District 26 is impacted by the presence of Shrine Mont.
@@ -296,7 +294,7 @@ Senate Districts with the largest total acreage of faith-owned parcels are Senat
 # # Display the map
 # saveWidget(map_jenks, "data/geo/sd_acres.html")
 
-#knitr::include_url("data/geo/sd_acres.html", height = "500px")
+knitr::include_url("data/geo/sd_acres.html", height = "400px")
 
 ```
 
@@ -305,7 +303,6 @@ Senate Districts with larger median parcel sizes are around the Richmond region 
 ```{r}
 #| label: fig-size-sd
 #| fig-cap: "Median parcel size by Senate District"
-
 
 # sd <- read_rds("data/rds/faith_senate.rds")
 # 
@@ -351,7 +348,7 @@ Senate Districts with larger median parcel sizes are around the Richmond region 
 # # Display the map
 # saveWidget(map_jenks, "data/geo/sd_size.html")
 
-#knitr::include_url("data/geo/sd_size.html", height = "500px")
+knitr::include_url("data/geo/sd_size.html", height = "400px")
 
 ```
 
