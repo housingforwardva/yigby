@@ -15,28 +15,44 @@ library(htmlwidgets)
 library(classInt)
 library(htmltools)
 
+hd <- read_rds("data/rds/faith_house.rds")
+
+va_lng <- -79.4587
+va_lat <- 38.00344
+
 ```
 
-The introduction of the Faith in Housing bill into the Virginia General Assembly presents an opportunity to also explore faith-based parcel ownership at based on house and senate districts. This provides state legislatures with a unique perspective on aspects of faith-based parcel ownership within their districts. There are 100 House Districts and 40 Senate Districts in the Virginia General Assembly. District lines were \[recently redrawn\])https://www.vpap.org/redistricting/) in 2021 by the Supreme Court of Virginia after Virginia's Redistricting Commission never came to an agreement.
+```{css}
+
+.quarto-figure-center>figure>p, .quarto-figure-center>figure>div {
+    text-align: left;
+}
+
+```
+
+The introduction of the Faith in Housing bill into the Virginia General Assembly presents an opportunity to also explore faith-based parcel ownership at based on house and senate districts. This provides state legislatures with a unique perspective on aspects of faith-based parcel ownership within their districts.
+
+::: {.callout-note}
+### State legislative districts in Virginia
+There are 100 House Districts and 40 Senate Districts in the Virginia General Assembly. District lines were [recently redrawn](https://www.vpap.org/redistricting/) in 2021 by the Supreme Court of Virginia after Virginia's Redistricting Commission never came to an agreement.
+:::
 
 ## House Districts
 
 Based on House Districts, the majority of faith-based parcel ownership is in southern and southwest Virginia. House Districts 45 and 46 contain the largest number of parcels owned by faith organizations, 2,080 and 1,199, respectively. They are followed by House District 49 (928 parcels).
 
-```{r}
-#| label: fig-parcels-hd
-#| fig-cap: "Total parcels by House District"
+::: {#fig-parcels-hd}
 
-# hd <- read_rds("data/rds/faith_house.rds")
-# 
+```{r}
+
 # # Function to create color palette based on Jenks breaks
 # create_jenks_palette <- function(data, n_classes = 5) {
 #   # Remove any NA values
 #   data <- data[!is.na(data)]
-#   
+# 
 #   # Calculate Jenks breaks
 #   breaks <- classIntervals(data, n = n_classes, style = "jenks")
-#   
+# 
 #   # Create a color palette
 #   pal <- colorBin(
 #     palette = "YlOrRd",
@@ -44,44 +60,55 @@ Based on House Districts, the majority of faith-based parcel ownership is in sou
 #     bins = breaks$brks,
 #     pretty = FALSE
 #   )
-#   
+# 
 #   return(pal)
 # }
 # 
 # # Create the Jenks breaks color palette
 # jenks_pal <- create_jenks_palette(hd$faith_house_count)
-#   
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(hd) %>%
-#   addProviderTiles("CartoDB.Positron") %>%
+# map_jenks <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+#   setView(va_lng, va_lat, zoom = 6.75) |>
+#   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
 #     fillColor = ~jenks_pal(faith_house_count),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("House District:", NAMELSAD, "<br>Parcels:", label_count)
-#   ) %>%
+#   ) |>
 #   addLegend(
 #     pal = jenks_pal,
 #     values = hd$faith_house_count,
 #     title = "Total Parcels",
 #     position = "topleft"
+#   ) |>
+#   onRender(
+#     "function(el, x) {
+#         L.control.zoom({position:'topright'}).addTo(this);
+#       }"
 #   )
 # 
-# saveWidget(map_jenks, "data/geo/hd_count.html")
+# map_jenks
+
+#saveWidget(map_jenks, "data/geo/hd_count.html")
 
 # Display the map
 
-knitr::include_url("data/geo/hd_count.html", height = "400px")
+knitr::include_url("data/geo/hd_count.html")
 
 ```
 
+Total parcels by House District
+
+:::
+
 When focused on total acreage of faith-owned parcels, House District 33 and and House District 71 exceed their peers. House District 33's large amount of faith-owned land is due greatly to the presence of Shrine Mont, a large retreat and conference center located in Orkney Springs, Virginia and owned by the Episcopal Diocese.
 
+::: {#fig-acres-hd}
+
 ```{r}
-#| label: fig-acres-hd
-#| fig-cap: "Total acres by House District"
 
 # hd <- read_rds("data/rds/faith_house.rds")
 # 
@@ -89,10 +116,10 @@ When focused on total acreage of faith-owned parcels, House District 33 and and 
 # create_jenks_palette <- function(data, n_classes = 5) {
 #   # Remove any NA values
 #   data <- data[!is.na(data)]
-#   
+# 
 #   # Calculate Jenks breaks
 #   breaks <- classIntervals(data, n = n_classes, style = "jenks")
-#   
+# 
 #   # Create a color palette
 #   pal <- colorBin(
 #     palette = "YlGn",
@@ -100,7 +127,7 @@ When focused on total acreage of faith-owned parcels, House District 33 and and 
 #     bins = breaks$brks,
 #     pretty = FALSE
 #   )
-#   
+# 
 #   return(pal)
 # }
 # 
@@ -108,35 +135,43 @@ When focused on total acreage of faith-owned parcels, House District 33 and and 
 # jenks_pal <- create_jenks_palette(hd$faith_house_total_acres)
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(hd) %>%
-#   addProviderTiles("CartoDB.Positron") %>%
+# map_jenks <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+#   setView(va_lng, va_lat, zoom = 6.75) |>
+#   addProviderTiles("CartoDB.Positron") |> 
 #   addPolygons(
 #     fillColor = ~jenks_pal(faith_house_total_acres),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("House District:", NAMELSAD, "<br>Value:", label_acres)
-#   ) %>%
+#   ) |> 
 #   addLegend(
 #     pal = jenks_pal,
 #     values = hd$faith_house_total_acres,
 #     title = "Total Acres",
 #     position = "topleft"
+#   ) |>
+#   onRender(
+#     "function(el, x) {
+#         L.control.zoom({position:'topright'}).addTo(this);
+#       }"
 #   )
 # 
-# # Display the map
 # saveWidget(map_jenks, "data/geo/hd_acres.html")
 
-#knitr::include_url("data/geo/hd_acres.html", height = "500px")
+knitr::include_url("data/geo/hd_acres.html")
 
 ```
 
+Total acres by House District
+
+:::
+
 The median parcel size can better help us understand areas where there is adequate, contiguous land that could be developed. Based on House Districts, large parcels are located in House District 88 (9.54 acres), House District 28 (9.26 acres), and House District 26 (7.14). The presence of smaller median parcel size in a district does not necessarily mean that properties are too small to develop, but could be an indication of multiple adjacent parcels under the same ownership. However, the results provide us with a preliminary assessment of typical parcel size in each district.
 
-```{r}
-#| label: fig-size-hd
-#| fig-cap: "Median parcel size by House District"
+::: {#fig-size-hd}
 
+```{r}
 
 # hd <- read_rds("data/rds/faith_house.rds")
 # 
@@ -144,10 +179,10 @@ The median parcel size can better help us understand areas where there is adequa
 # create_jenks_palette <- function(data, n_classes = 5) {
 #   # Remove any NA values
 #   data <- data[!is.na(data)]
-#   
+# 
 #   # Calculate Jenks breaks
 #   breaks <- classIntervals(data, n = n_classes, style = "jenks")
-#   
+# 
 #   # Create a color palette
 #   pal <- colorBin(
 #     palette = "YlGnBu",
@@ -155,7 +190,7 @@ The median parcel size can better help us understand areas where there is adequa
 #     bins = breaks$brks,
 #     pretty = FALSE
 #   )
-#   
+# 
 #   return(pal)
 # }
 # 
@@ -163,28 +198,37 @@ The median parcel size can better help us understand areas where there is adequa
 # jenks_pal <- create_jenks_palette(hd$med_parcel_size)
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(hd) %>%
-#   addProviderTiles("CartoDB.Positron") %>%
+# map_jenks <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+#   setView(va_lng, va_lat, zoom = 6.75) |>
+#   addProviderTiles("CartoDB.Positron") |> 
 #   addPolygons(
 #     fillColor = ~jenks_pal(med_parcel_size),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("House District:", NAMELSAD, "<br>Value:", label_size)
-#   ) %>%
+#   ) |> 
 #   addLegend(
 #     pal = jenks_pal,
 #     values = hd$med_parcel_size,
 #     title = "Median Parcel Size",
 #     position = "topleft"
+#   ) |> 
+#   onRender(
+#     "function(el, x) {
+#         L.control.zoom({position:'topright'}).addTo(this);
+#       }"
 #   )
 # 
-# # Display the map
 # saveWidget(map_jenks, "data/geo/hd_size.html")
 
-knitr::include_url("data/geo/hd_size.html", height = "400px")
+knitr::include_url("data/geo/hd_size.html")
 
 ```
+
+Median parcel size by House District
+
+:::
 
 ## Senate Districts
 
@@ -239,7 +283,7 @@ Senate Districts undoubtedly show similar patterns as House Districts. Senate Di
 # # Display the map
 # saveWidget(map_jenks, "data/geo/sd_count.html")
 
-knitr::include_url("data/geo/sd_count.html", height = "400px")
+#knitr::include_url("data/geo/sd_count.html", height = "400px")
 
 ```
 
@@ -294,7 +338,7 @@ Senate Districts with the largest total acreage of faith-owned parcels are Senat
 # # Display the map
 # saveWidget(map_jenks, "data/geo/sd_acres.html")
 
-knitr::include_url("data/geo/sd_acres.html", height = "400px")
+#knitr::include_url("data/geo/sd_acres.html", height = "400px")
 
 ```
 
@@ -348,7 +392,7 @@ Senate Districts with larger median parcel sizes are around the Richmond region 
 # # Display the map
 # saveWidget(map_jenks, "data/geo/sd_size.html")
 
-knitr::include_url("data/geo/sd_size.html", height = "400px")
+#knitr::include_url("data/geo/sd_size.html", height = "400px")
 
 ```
 
