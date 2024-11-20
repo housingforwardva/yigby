@@ -1,0 +1,289 @@
+# Regions {findings-pdc}
+
+```{r}
+#| label: setup
+
+library(tidyverse)
+library(kableExtra)
+library(hdatools)
+library(sf)
+library(geojsonsf)
+library(ggtext)
+library(scales)
+library(leaflet)
+library(htmlwidgets)
+library(classInt)
+library(htmltools)
+
+faith_mapped <- read_rds("data/faith_mapped.rds") |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  mutate(pdc = case_when(
+    jurisdiction == "Franklin County" ~ "Roanoke Valley-Alleghany",
+    TRUE ~ pdc
+  ))
+
+```
+
+To investigate geographic patterns further, HFV utilized Virginia's 21 planning district commissions (PDCs) to assign parcels to a geographic region. This is helpful because not all jurisdictions in Virginia are part of a metropolitan or micropolitan statistical area, whereas all jurisdictions are represented by at least one of the 21 PDCs. In addition, PDC boundaries represent an area wherein there are distinct socioeconomic patterns.
+
+```{r}
+#| label: fig-pdc-map
+#| fig-cap: "Map of Virginia PDCs"
+
+# Insert map of Virginia Planning District Commissions
+
+pdc <- geojson_sf("data/geo/pdc_va.geojson") 
+
+
+# Create a custom color palette with 21 distinct colors
+colors_21 <- c(
+  "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF", "#800000",
+  "#008000", "#000080", "#808000", "#800080", "#008080", "#FFA500", "#FFC0CB",
+  "#A52A2A", "#DEB887", "#5F9EA0", "#7FFF00", "#D2691E", "#FF7F50", "#6495ED"
+)
+
+# Create a color palette function
+pal <- colorFactor(
+  palette = colors_21,
+  domain = pdc$PDC_Primary_Name
+)
+
+# Create a custom tooltip
+tooltip_content <- paste0(
+  "<strong>Jurisdiction:</strong> ", pdc$Name, "<br/>",
+  "<strong>PDC:</strong> ", pdc$PDC_Primary_Name
+) %>% lapply(HTML)
+
+# Create the leaflet map
+map <- leaflet(pdc) %>%
+  addProviderTiles("CartoDB.Positron") |> 
+  addPolygons(
+    fillColor = ~pal(PDC_Primary_Name),
+    weight = 1,
+    opacity = 0.6,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlight = highlightOptions(
+      weight = 1,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 1,
+      bringToFront = TRUE),
+    label = tooltip_content,
+    labelOptions = labelOptions(
+      style = list(
+        "font-family" = "sans-serif",
+        "font-size" = "12px",
+        padding = "10px"
+      ),
+      textsize = "15px",
+      direction = "auto",
+      opacity = 0.9,
+      offset = c(0, -10),
+      sticky = TRUE  # Make tooltip follow the mouse
+    ))
+
+# Display the map
+map
+
+
+```
+
+The Hampton Roads region exceeds its peers in the number of parcels owned by faith-based organizations at 3,332. The LENOWISCO and PlanRVA regions follow at just over 1,000 fewer parcels - 2,050 and 2,006, respectively.
+
+```{r}
+#| label: fig-pdc
+#| fig-cap: "Total faith-based owned parcels by PDC"
+
+faith_mapped <- read_rds("data/faith_mapped.rds") |> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  mutate(pdc = case_when(
+    jurisdiction == "Franklin County" ~ "Roanoke Valley-Alleghany",
+    TRUE ~ pdc
+  ))
+
+
+faith_summary_pdc <- faith_mapped |> 
+  group_by(pdc) |> 
+  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+            avg_parcel_size = mean(acres),
+            count = as.numeric(n_distinct(ll_uuid)))
+
+ggplot(faith_summary_pdc,
+       aes(x = reorder(pdc, count),
+           y = count)) +
+  geom_col(fill = "#011E41") +
+  geom_text(
+    aes(label = scales::comma(round(count, 0))), 
+    color = "#011E41", 
+    hjust = -0.2
+    ) +
+  coord_flip() +
+  theme_hfv() +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Total faith-based owned parcels",
+       caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset.")
+
+
+```
+
+These rankings change when we look specifically at acreage. The Northern Shenandoah Valley region rises to the top of list at just over 14,000 acres of land owned by faith-based organizations, while the PlanRVA region follows at 10,246. Hampton Roads still stays in the top three, but comes in at 7,602 acres. The LENOWISCO region falls down the list to the 17th region with the most acreage at only 1,606 acres. While the LENOWISCO region contains significantly more parcels than several of its peers, those parcels are undoubtedly smaller in area.
+
+```{r}
+#| label: fig-pdc-acres
+#| fig-cap: "Total acres of faith-based owned parcels by PDC"
+
+faith_mapped <- read_rds("data/faith_mapped.rds") |> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  mutate(pdc = case_when(
+    jurisdiction == "Franklin County" ~ "Roanoke Valley-Alleghany",
+    TRUE ~ pdc
+  ))
+
+faith_summary_pdc <- faith_mapped |> 
+  group_by(pdc) |> 
+  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+            avg_parcel_size = mean(acres),
+            count = as.numeric(n_distinct(ll_uuid)))
+
+# sum(faith_summary_pdc$total_acres)
+
+ggplot(faith_summary_pdc,
+       aes(x = reorder(pdc, total_acres),
+           y = total_acres)) +
+  geom_col(fill = "#011E41") +
+  geom_text(
+    aes(label = scales::comma(round(total_acres, 0))), 
+    color = "#011E41", 
+    hjust = -0.2
+    ) +
+  coord_flip() +
+  theme_hfv() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Total acres of faith organization owned land",
+       caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset.")
+
+```
+
+Exploring individual parcel size gives a better understanding of opportunities for viable residential development. To do this, we explore the median parcel size rather than the average in order to account for outliers that may skew the results. By looking at the median parcel size, the rankings change once again. The Thomas Jefferson region has the largest parcels with a median size of 1.74 acres - just under the size of a FIFA standard soccer field (1.76 acres). The Northern Neck follows at 1.55 acres and the next six regions sit between 1.3 and 0.92 acres. The remaining regions have a median parcel size below 0.75 acres - with the LENOWISCO region have the smallest median parcel size at under 0.10 acres.
+
+```{r}
+#| label: fig-pdc-med-acres
+#| fig-cap: "Median parcel size by PDC"
+
+faith_mapped <- read_rds("data/faith_mapped.rds") |> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  mutate(pdc = case_when(
+    jurisdiction == "Franklin County" ~ "Roanoke Valley-Alleghany",
+    TRUE ~ pdc
+  ))
+
+faith_summary_pdc <- faith_mapped |> 
+  group_by(pdc) |> 
+  summarise(total_acres = as.numeric(format(sum(acres), scientific = FALSE)),
+            med_parcel_size = median(acres),
+            count = as.numeric(n_distinct(ll_uuid)))
+
+ggplot(faith_summary_pdc,
+       aes(x = reorder(pdc, med_parcel_size),
+           y = med_parcel_size)) +
+  geom_col(fill = "#40c0c0") +
+    geom_text(aes(label = round(med_parcel_size, 2)), color = "#FFFFFF", hjust = 1.1) +
+  coord_flip() +
+  theme_hfv() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)), limits = c(0,2))  +
+  labs(title = "Median parcel size of faith-based owned land by PDC",
+       caption = "**Source:** HousingForward Virginia & LOVELAND Technologies, Regrid 2024 Dataset.")
+
+
+
+```
+
+At the local level, we can identify jurisdictions with significant acreage of faith-based owned parcels. Based on median parcel size, Goochland County leads its nearest peer by over 1.5 acres with a median parcel size of 7.18 acres. Cumberland County comes in at 5.5 acres. The PlanRVA region is well-represented among jurisdictions with large median parcel sizes - with Goochland, Powhatan, Henrico, New Kent, Hanover, and Charles City represented (6 of the 8 counties/cities within the PDC).
+
+```{r}
+#| label: fig-local-count
+#| fig-cap: "Top 15: Median parcel size by jurisdiction"
+
+faith_mapped <- read_rds("data/faith_mapped.rds")|> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  mutate(pdc = case_when(
+    jurisdiction == "Franklin County" ~ "Roanoke Valley-Alleghany",
+    TRUE ~ pdc
+  ))
+
+faith_summary_local <- faith_mapped %>% 
+  group_by(jurisdiction, pdc) %>% 
+  summarise(
+    total_acres = sum(acres, na.rm = TRUE),
+    med_parcel_size = median(acres, na.rm = TRUE),
+    count = n_distinct(ll_uuid),
+    .groups = "drop"
+  ) %>% 
+  mutate(
+    jurisdiction = str_remove(jurisdiction, " County"),
+    total_acres = round(total_acres, 2),
+    med_parcel_size = round(med_parcel_size, 2)
+  ) %>% 
+  arrange(desc(med_parcel_size)) %>%
+  slice_head(n = 20)
+
+ggplot(faith_summary_local,
+       aes(x = reorder(jurisdiction, med_parcel_size),
+           y = med_parcel_size,
+           fill = pdc)) +
+  geom_col(fill = "#40c0c0") +
+  geom_text(aes(label = med_parcel_size), color = "#FFFFFF", hjust = 1.1) +
+  coord_flip() +
+  theme_hfv()
+
+```
+
+The top ten organizations who own the most land in jurisdictions along the I-95/I-64 corridor are listed below.The Presbyterian League of the Presbytery of Eastern Virginia owns the most acreage with 12 parcels that amount to 3,429 acres in New Kent County. None of the top owners are located within a major city, but are largely in rural communities.
+
+```{r}
+#| label: fig-local-own
+#| fig-cap: "Top 5: Parcel count by owners in regions along I-95/I-64 "
+
+faith_mapped <- read_rds("data/faith_mapped.rds")|> 
+  st_drop_geometry() |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  filter(
+    pdc == "Hampton Roads" | 
+      pdc == "PlanRVA" |
+      pdc == "Northern Virginia" |
+      pdc == "George Washington")
+
+faith_summary_local <- faith_mapped %>% 
+  group_by(owner, jurisdiction) %>% 
+  summarise(
+    total_acres = sum(acres, na.rm = TRUE),
+    med_parcel_size = median(acres, na.rm = TRUE),
+    count = n_distinct(ll_uuid),
+    .groups = "drop"
+  ) %>% 
+  mutate(
+    jurisdiction = str_remove(jurisdiction, " County"),
+    total_acres = round(total_acres, 2),
+    med_parcel_size = round(med_parcel_size, 2)
+  ) %>% 
+  arrange(desc(total_acres)) %>%
+  slice_head(n = 10) |> 
+  mutate(owner = str_to_title(owner))
+
+
+faith_summary_local |> 
+  kbl(col.names = c("Owner", "Jurisdiction", "Total Acres", "Median Parcel Size", "Number of Parcels"), align = "lcccc") |> 
+  kable_styling(bootstrap_options = c("striped", "condensed"))
+
+
+```
+
+Further exploration of ownership in specific jurisdictions of interest may yield results that would facilitate conversation about current use and future plans for parcels. The current investigation would only be enhanced with major groundtruthing efforts and outreach to individual parcel owners.
+

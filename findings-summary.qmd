@@ -1,0 +1,195 @@
+# Summary {findings-summary}
+
+```{r}
+#| label: setup
+
+library(tidyverse)
+library(kableExtra)
+library(hdatools)
+library(formattable)
+library(sf)
+library(ggtext)
+library(scales)
+library(ggspatial)
+library(geojsonsf)
+
+```
+
+Out of the over 4 million parcels in Virginia, **22,453** were identified as likely owned by a faith-based organization --- with a 95% confidence level that the true accuracy of the entire dataset lies between 99.03% and 100%.
+
+```{r}
+#| label: fig-map
+#| fig-cap: "Parcels in Virginia owned by faith-based organizations"
+#| fig-asp: 0.55
+
+faith_mapped <- read_rds("data/faith_mapped.rds") |> 
+  distinct(ll_uuid, .keep_all = TRUE) |> 
+  st_centroid()
+
+va_cty <- geojson_sf("data/geo/pdc_va.geojson") 
+
+low_cov <- c("Alleghany", "Cumberland", "Dinwiddie", "Goochland", "Rockbridge", "Washington")
+
+ggplot() +
+  geom_sf(
+    data = va_cty,
+    fill = "grey90",
+    color = "grey95" 
+  ) +
+  geom_sf(
+    data = filter(va_cty, Name %in% low_cov),
+    fill = "grey90",
+    color = "grey50",
+    linewidth = 0.5,
+    linetype = 5
+  ) +
+  geom_sf(
+    data = faith_mapped,
+    size = 0.5,
+    color = "#259591",
+    alpha = 0.1
+  ) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(
+    title = "Parcels in Virginia owned by faith-based organizations",
+    subtitle = "Limited data coverage in outlined counties"
+  ) +
+  theme_hfv(
+    panel.grid = element_blank(),
+    axis.text = element_blank()
+  )
+
+```
+
+
+These findings were based on a keyword search with a process of retention and elimination based on known faith-based and secular entities. Some faith-based properties could be absent from the analysis due to terms or phrases not accounted for.
+
+However, the results likely represent a significant, if not an overwhelming majority, of parcels owned by faith-based organizations in the Commonwealth of Virginia. In total, these parcels amount to 74,116 acres of land.
+
+::: {.callout-tip}
+### How large is 74,116 acres?
+To put this into context, the City of Richmond is roughly 40,000 acres, meaning the identified parcels amount to nearly *twice the size* of Richmond.
+:::
+
+A histogram of the lot sizes of the 22,453 parcels shows that an overwhelming majority of these parcels are more than 0.1 acres (approximately 4,350 square feet). 
+
+```{r}
+#| label: fig-lots
+#| fig-cap: "Distribution of lot sizes"
+
+faith_parcels <- faith_mapped |> 
+  st_drop_geometry()
+
+lot_size_label <- function(x) {
+  ifelse(
+    x < 0.1,
+    paste(format(round(x * 43560), big.mark = ","), "sqft"),
+    paste(formatC(x, digits = 3), "acres")
+  )
+}
+
+median_lot <- median(faith_parcels$acres)
+
+median_label <- lot_size_label(median_lot)
+
+lb <- 10^(seq(log10(0.01), log10(100), length.out = 31))
+
+lb_plot <- c(
+  500/43560, 1000/43560, 2000/43560,
+  0.1, 0.25, 0.5, 1, 2, 5, 10, 25, 50, 100
+  )
+
+ggplot(faith_parcels, aes(y = acres)) +
+  geom_histogram(
+    breaks = lb,
+    fill = "#011E41",
+    color = NA,
+    alpha = 0.2
+  ) +
+  geom_density(
+    aes(x = ..count.. * 0.14),
+    color = "#011E41", 
+    size = 0.5,
+    alpha = 0.7
+  ) +
+  # Add vertical line for median
+  geom_hline(
+    yintercept = median_lot,
+    color = "#8B85CA",
+    linetype = "dashed",
+    size = 0.75
+  ) +
+  annotate(
+    "text",
+    y = median_lot,
+    x = 1850,
+    label = paste("Median:", median_label),
+    color = "#8B85CA",
+    size = 3,
+    hjust = 1,
+    vjust = -1,
+    fontface = "bold"
+  ) +
+  coord_cartesian(ylim = c(100, 0.01)) +
+  scale_x_continuous(
+    limits = c(0, 1900),
+    expand = c(0.01, 0.01),
+    labels = label_comma()
+  ) +
+  scale_y_continuous(
+    trans = c("log10", "reverse"),
+    breaks = lb_plot,
+    expand = c(0.02, 0.02),
+    labels = lot_size_label
+  ) +
+  labs(
+    title = "Distribution of lot sizes",
+    subtitle = "Small lots shown in square feet, larger lots in acres",
+    x = "Number of parcels"
+  ) +
+  theme_hfv(
+    flip_gridlines = T,
+    axis.title.x = element_text(hjust = 0, margin = margin(t = 6)),
+    axis.text.y = element_text(vjust = 0.5)
+  )
+
+
+```
+
+SB 822 or any similar legislation would encourage multifamily development whose lot size requirements depend on a variety of factors. The bill introduced in 2024 allowed for a density of 40 units per acre and a height of one story *or* 15 feet above the maximum allowable height for residential use according to the locality's current zoning.
+
+The median lot size is 23,509 square feet, which is approximately 0.54 acres. In many circumstances, this lot size is only viable for a small multifamily building of fewer than 20 units, particularly in urban areas served by public water and sewer.
+
+However, there are still significant shares of these parcels that could theoretically support larger residential development projects. About 38% are larger than 1 acre, and 25% are larger than 2 acres.
+
+```{r}
+#| label: tbl-lot-sum
+#| tbl-cap: "Share of parcels by lot size"
+
+lot_sum <- faith_parcels |> 
+  summarise(
+    `More than 0.25 acres` = mean(acres > 0.25),
+    `More than 0.5 acres` = mean(acres > 0.5),
+    `More than 1 acre` = mean(acres > 1),
+    `More than 2 acres` = mean(acres > 2),
+    `More than 5 acres` = mean(acres > 5)
+  )
+
+lot_sum |> 
+  pivot_longer(
+    cols = everything(),
+    names_to = "Lot size",
+    values_to = "Percent"
+  ) |> 
+  mutate(Percent = percent(Percent, digits = 1)) |> 
+  kbl(
+    align = "lr"
+  ) |> 
+  kable_styling(
+    full_width = F,
+    bootstrap_options = c("striped")
+  )
+
+```
+

@@ -17,6 +17,7 @@ format:
     # template-partials:
     #   - toc.html
     toc-title: "On this page"
+    html-table-processing: none
   # pdf:
   #   documentclass: scrreprt
   #   mainfont: "Open Sans"
@@ -41,7 +42,13 @@ book:
     - index.qmd 
     - intro.qmd # Introduction
     - methods.qmd # Methods
-    - findings.qmd # Findings
+    - part: "Findings"
+      chapters:
+        - findings-summary.qmd # Summary findings
+        - findings-pdc.qmd # Findings by PDC
+        - findings-ga.qmd # Findings by GA district
+        - findings-nova.qmd # NOVA zoning analysis
+    - conclusions.qmd # Conclusions
 
 knitr:
   opts_chunk: 
