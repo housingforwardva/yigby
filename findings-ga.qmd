@@ -16,13 +16,36 @@ library(classInt)
 library(htmltools)
 
 hd <- read_rds("data/rds/faith_house.rds")
+sd <- read_rds("data/rds/faith_senate.rds")
 
 va_lng <- -79.4587
 va_lat <- 38.00344
 
+# Function to create color palette based on Jenks breaks
+create_jenks_palette <- function(data, n_classes = 5, pal = "YlOrRd") {
+  # Remove any NA values
+  data <- data[!is.na(data)]
+
+  # Calculate Jenks breaks
+  breaks <- classIntervals(data, n = n_classes, style = "jenks")
+
+  # Create a color palette
+  pal <- colorBin(
+    palette = pal,
+    domain = data,
+    bins = breaks$brks,
+    pretty = FALSE
+  )
+
+  return(pal)
+}
+
 ```
 
 ```{css}
+
+/* Add css to fix how Quarto renders leaflet legends */
+/* See: https://github.com/quarto-dev/quarto-cli/issues/7843 */
 
 .quarto-figure-center>figure>p, .quarto-figure-center>figure>div {
     text-align: left;
@@ -45,41 +68,22 @@ Based on House Districts, the majority of faith-based parcel ownership is in sou
 
 ```{r}
 
-# # Function to create color palette based on Jenks breaks
-# create_jenks_palette <- function(data, n_classes = 5) {
-#   # Remove any NA values
-#   data <- data[!is.na(data)]
-# 
-#   # Calculate Jenks breaks
-#   breaks <- classIntervals(data, n = n_classes, style = "jenks")
-# 
-#   # Create a color palette
-#   pal <- colorBin(
-#     palette = "YlOrRd",
-#     domain = data,
-#     bins = breaks$brks,
-#     pretty = FALSE
-#   )
-# 
-#   return(pal)
-# }
-# 
 # # Create the Jenks breaks color palette
-# jenks_pal <- create_jenks_palette(hd$faith_house_count)
+# jenks_pal_hd1 <- create_jenks_palette(hd$faith_house_count, pal = "YlOrRd")
 # 
 # # Create the leaflet map
 # map_jenks <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
 #   setView(va_lng, va_lat, zoom = 6.75) |>
 #   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
-#     fillColor = ~jenks_pal(faith_house_count),
+#     fillColor = ~jenks_pal_hd1(faith_house_count),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("House District:", NAMELSAD, "<br>Parcels:", label_count)
 #   ) |>
 #   addLegend(
-#     pal = jenks_pal,
+#     pal = jenks_pal_hd1,
 #     values = hd$faith_house_count,
 #     title = "Total Parcels",
 #     position = "topleft"
@@ -90,11 +94,7 @@ Based on House Districts, the majority of faith-based parcel ownership is in sou
 #       }"
 #   )
 # 
-# map_jenks
-
-#saveWidget(map_jenks, "data/geo/hd_count.html")
-
-# Display the map
+# saveWidget(map_jenks, "data/geo/hd_count.html")
 
 knitr::include_url("data/geo/hd_count.html")
 
@@ -110,43 +110,22 @@ When focused on total acreage of faith-owned parcels, House District 33 and and 
 
 ```{r}
 
-# hd <- read_rds("data/rds/faith_house.rds")
-# 
-# # Function to create color palette based on Jenks breaks
-# create_jenks_palette <- function(data, n_classes = 5) {
-#   # Remove any NA values
-#   data <- data[!is.na(data)]
-# 
-#   # Calculate Jenks breaks
-#   breaks <- classIntervals(data, n = n_classes, style = "jenks")
-# 
-#   # Create a color palette
-#   pal <- colorBin(
-#     palette = "YlGn",
-#     domain = data,
-#     bins = breaks$brks,
-#     pretty = FALSE
-#   )
-# 
-#   return(pal)
-# }
-# 
 # # Create the Jenks breaks color palette
-# jenks_pal <- create_jenks_palette(hd$faith_house_total_acres)
+# jenks_pal_hd2 <- create_jenks_palette(hd$faith_house_total_acres, pal = "YlGn")
 # 
 # # Create the leaflet map
 # map_jenks <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
 #   setView(va_lng, va_lat, zoom = 6.75) |>
 #   addProviderTiles("CartoDB.Positron") |> 
 #   addPolygons(
-#     fillColor = ~jenks_pal(faith_house_total_acres),
+#     fillColor = ~jenks_pal_hd2(faith_house_total_acres),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("House District:", NAMELSAD, "<br>Value:", label_acres)
 #   ) |> 
 #   addLegend(
-#     pal = jenks_pal,
+#     pal = jenks_pal_hd2,
 #     values = hd$faith_house_total_acres,
 #     title = "Total Acres",
 #     position = "topleft"
@@ -173,43 +152,22 @@ The median parcel size can better help us understand areas where there is adequa
 
 ```{r}
 
-# hd <- read_rds("data/rds/faith_house.rds")
-# 
-# # Function to create color palette based on Jenks breaks
-# create_jenks_palette <- function(data, n_classes = 5) {
-#   # Remove any NA values
-#   data <- data[!is.na(data)]
-# 
-#   # Calculate Jenks breaks
-#   breaks <- classIntervals(data, n = n_classes, style = "jenks")
-# 
-#   # Create a color palette
-#   pal <- colorBin(
-#     palette = "YlGnBu",
-#     domain = data,
-#     bins = breaks$brks,
-#     pretty = FALSE
-#   )
-# 
-#   return(pal)
-# }
-# 
 # # Create the Jenks breaks color palette
-# jenks_pal <- create_jenks_palette(hd$med_parcel_size)
+# jenks_pal_hd3 <- create_jenks_palette(hd$med_parcel_size, pal = "YlGnBu")
 # 
 # # Create the leaflet map
 # map_jenks <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
 #   setView(va_lng, va_lat, zoom = 6.75) |>
 #   addProviderTiles("CartoDB.Positron") |> 
 #   addPolygons(
-#     fillColor = ~jenks_pal(med_parcel_size),
+#     fillColor = ~jenks_pal_hd3(med_parcel_size),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("House District:", NAMELSAD, "<br>Value:", label_size)
 #   ) |> 
 #   addLegend(
-#     pal = jenks_pal,
+#     pal = jenks_pal_hd3,
 #     values = hd$med_parcel_size,
 #     title = "Median Parcel Size",
 #     position = "topleft"
@@ -234,167 +192,128 @@ Median parcel size by House District
 
 Senate Districts undoubtedly show similar patterns as House Districts. Senate Districts 40 (2,545) and 15 (1,727), in southwest and southern Virginia, contain the most faith-owned parcels. They are followed by other Senate Districts in the south and southwest part of the state.
 
-```{r}
-#| label: fig-parcels-sd
-#| fig-cap: "Total parcels by Senate District"
+::: {#fig-parcels-sd}
 
-# sd <- read_rds("data/rds/faith_senate.rds")
-# 
-# # Function to create color palette based on Jenks breaks
-# create_jenks_palette <- function(data, n_classes = 5) {
-#   # Remove any NA values
-#   data <- data[!is.na(data)]
-#   
-#   # Calculate Jenks breaks
-#   breaks <- classIntervals(data, n = n_classes, style = "jenks")
-#   
-#   # Create a color palette
-#   pal <- colorBin(
-#     palette = "YlOrRd",
-#     domain = data,
-#     bins = breaks$brks,
-#     pretty = FALSE
-#   )
-#   
-#   return(pal)
-# }
-# 
+```{r}
+
 # # Create the Jenks breaks color palette
-# jenks_pal <- create_jenks_palette(sd$faith_senate_count)
-#   
+# jenks_pal_sd1 <- create_jenks_palette(sd$faith_senate_count, pal = "YlOrRd")
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(sd) %>%
-#   addProviderTiles("CartoDB.Positron") %>%
+# map_jenks <- leaflet(sd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+#   setView(va_lng, va_lat, zoom = 6.75) |>
+#   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
-#     fillColor = ~jenks_pal(faith_senate_count),
+#     fillColor = ~jenks_pal_sd1(faith_senate_count),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("Senate District:", NAMELSAD, "<br>Parcels:", label_count)
-#   ) %>%
+#   ) |>
 #   addLegend(
-#     pal = jenks_pal,
+#     pal = jenks_pal_sd1,
 #     values = sd$faith_senate_count,
 #     title = "Total Parcels",
 #     position = "topleft"
+#   ) |>
+#   onRender(
+#     "function(el, x) {
+#         L.control.zoom({position:'topright'}).addTo(this);
+#       }"
 #   )
 # 
-# # Display the map
 # saveWidget(map_jenks, "data/geo/sd_count.html")
 
-#knitr::include_url("data/geo/sd_count.html", height = "400px")
+knitr::include_url("data/geo/sd_count.html")
 
 ```
 
+Total parcels by Senate District
+
+:::
+
 Senate Districts with the largest total acreage of faith-owned parcels are Senate Districts 26 (12,598.90 acres) and 3 (6,381.74 acres). Once again, Senate District 26 is impacted by the presence of Shrine Mont.
 
+::: {#fig-acres-sd}
+
 ```{r}
-#| label: fig-acres-sd
-#| fig-cap: "Total acres by Senate District"
 
-
-# sd <- read_rds("data/rds/faith_senate.rds")
-# 
-# # Function to create color palette based on Jenks breaks
-# create_jenks_palette <- function(data, n_classes = 5) {
-#   # Remove any NA values
-#   data <- data[!is.na(data)]
-#   
-#   # Calculate Jenks breaks
-#   breaks <- classIntervals(data, n = n_classes, style = "jenks")
-#   
-#   # Create a color palette
-#   pal <- colorBin(
-#     palette = "YlGn",
-#     domain = data,
-#     bins = breaks$brks,
-#     pretty = FALSE
-#   )
-#   
-#   return(pal)
-# }
-# 
 # # Create the Jenks breaks color palette
-# jenks_pal <- create_jenks_palette(sd$faith_senate_total_acres)
+# jenks_pal_sd2 <- create_jenks_palette(sd$faith_senate_total_acres, pal = "YlGn")
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(sd) %>%
-#   addProviderTiles("CartoDB.Positron") %>%
+# map_jenks <- leaflet(sd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+#   setView(va_lng, va_lat, zoom = 6.75) |>
+#   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
-#     fillColor = ~jenks_pal(faith_senate_total_acres),
+#     fillColor = ~jenks_pal_sd2(faith_senate_total_acres),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("Senate District:", NAMELSAD, "<br>Value:", label_acres)
-#   ) %>%
+#   ) |>
 #   addLegend(
-#     pal = jenks_pal,
+#     pal = jenks_pal_sd2,
 #     values = sd$faith_senate_total_acres,
 #     title = "Total Acres",
 #     position = "topleft"
+#   ) |>
+#   onRender(
+#     "function(el, x) {
+#         L.control.zoom({position:'topright'}).addTo(this);
+#       }"
 #   )
 # 
-# # Display the map
 # saveWidget(map_jenks, "data/geo/sd_acres.html")
 
-#knitr::include_url("data/geo/sd_acres.html", height = "400px")
+knitr::include_url("data/geo/sd_acres.html")
 
 ```
 
+Total acres by Senate District
+
+:::
+
 Senate Districts with larger median parcel sizes are around the Richmond region and Hampton Roads region. This is a change from House Districts, where House District 28 was ranked fairly high. The increase in the area of the Senate District likely contributed to the change in median parcel size, with the inclusion of more smaller sized parcels. Senate Districts 12 (3.34 acres), 11 (2.88 acres), and 7 (2.05 acres) rank highest among their peers in terms of typical parcel size.
 
-```{r}
-#| label: fig-size-sd
-#| fig-cap: "Median parcel size by Senate District"
+::: {#fig-size-sd}
 
-# sd <- read_rds("data/rds/faith_senate.rds")
-# 
-# # Function to create color palette based on Jenks breaks
-# create_jenks_palette <- function(data, n_classes = 5) {
-#   # Remove any NA values
-#   data <- data[!is.na(data)]
-#   
-#   # Calculate Jenks breaks
-#   breaks <- classIntervals(data, n = n_classes, style = "jenks")
-#   
-#   # Create a color palette
-#   pal <- colorBin(
-#     palette = "YlGnBu",
-#     domain = data,
-#     bins = breaks$brks,
-#     pretty = FALSE
-#   )
-#   
-#   return(pal)
-# }
-# 
+```{r}
+
 # # Create the Jenks breaks color palette
-# jenks_pal <- create_jenks_palette(sd$med_parcel_size)
+# jenks_pal_sd3 <- create_jenks_palette(sd$med_parcel_size, pal = "YlGnBu")
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(sd) %>%
-#   addProviderTiles("CartoDB.Positron") %>%
+# map_jenks <- leaflet(sd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+#   setView(va_lng, va_lat, zoom = 6.75) |>
+#   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
-#     fillColor = ~jenks_pal(med_parcel_size),
+#     fillColor = ~jenks_pal_sd3(med_parcel_size),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("Senate District:", NAMELSAD, "<br>Value:", label_size)
-#   ) %>%
+#   ) |>
 #   addLegend(
-#     pal = jenks_pal,
+#     pal = jenks_pal_sd3,
 #     values = sd$med_parcel_size,
 #     title = "Median Parcel Size",
 #     position = "topleft"
+#   ) |>
+#   onRender(
+#     "function(el, x) {
+#         L.control.zoom({position:'topright'}).addTo(this);
+#       }"
 #   )
 # 
-# # Display the map
 # saveWidget(map_jenks, "data/geo/sd_size.html")
 
-#knitr::include_url("data/geo/sd_size.html", height = "400px")
+knitr::include_url("data/geo/sd_size.html")
 
 ```
 
-The data presented above represents a snapshot of faith-owned parcels by Virginia General Assembly Districts. A full exploration of these parcels for site feasibility is outside the scope of this report. However, it is clear that a significant amount of land exists that could represent potential residential development.
+Median parcel size by Senate District
 
+:::
+
+The data presented above represents a snapshot of faith-owned parcels by Virginia General Assembly Districts. A full exploration of these parcels for site feasibility is outside the scope of this report. However, it is clear that a significant amount of land exists that could represent potential residential development.

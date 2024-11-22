@@ -1,0 +1,17 @@
+# create_jenks_palette <- function(data, n_classes = 5) {
+#   # Remove any NA values
+#   data <- data[!is.na(data)]
+# 
+#   # Calculate Jenks breaks
+#   breaks <- classIntervals(data, n = n_classes, style = "jenks")
+# 
+#   # Create a color palette
+#   pal <- colorBin(
+#     palette = "YlOrRd",
+#     domain = data,
+#     bins = breaks$brks,
+#     pretty = FALSE
+#   )
+# 
+#   return(pal)
+# }

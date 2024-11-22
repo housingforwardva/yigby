@@ -211,6 +211,9 @@ ul.task-list li input[type="checkbox"] {
 <div class="cell">
 <style type="text/css">
 
+/* Add css to fix how Quarto renders leaflet legends */
+/* See: https://github.com/quarto-dev/quarto-cli/issues/7843 */
+
 .quarto-figure-center>figure>p, .quarto-figure-center>figure>div {
     text-align: left;
 }
@@ -279,8 +282,47 @@ Figure&nbsp;5.3: Median parcel size by House District
 <section id="senate-districts" class="level2" data-number="5.2">
 <h2 data-number="5.2" class="anchored" data-anchor-id="senate-districts"><span class="header-section-number">5.2</span> Senate Districts</h2>
 <p>Senate Districts undoubtedly show similar patterns as House Districts. Senate Districts 40 (2,545) and 15 (1,727), in southwest and southern Virginia, contain the most faith-owned parcels. They are followed by other Senate Districts in the south and southwest part of the state.</p>
+<div id="fig-parcels-sd" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-parcels-sd-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell">
+<iframe src="data/geo/sd_count.html" width="672" height="400px" data-external="1">
+</iframe>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-parcels-sd-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5.4: Total parcels by Senate District
+</figcaption>
+</figure>
+</div>
 <p>Senate Districts with the largest total acreage of faith-owned parcels are Senate Districts 26 (12,598.90 acres) and 3 (6,381.74 acres). Once again, Senate District 26 is impacted by the presence of Shrine Mont.</p>
+<div id="fig-acres-sd" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-acres-sd-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell">
+<iframe src="data/geo/sd_acres.html" width="672" height="400px" data-external="1">
+</iframe>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-acres-sd-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5.5: Total acres by Senate District
+</figcaption>
+</figure>
+</div>
 <p>Senate Districts with larger median parcel sizes are around the Richmond region and Hampton Roads region. This is a change from House Districts, where House District 28 was ranked fairly high. The increase in the area of the Senate District likely contributed to the change in median parcel size, with the inclusion of more smaller sized parcels. Senate Districts 12 (3.34 acres), 11 (2.88 acres), and 7 (2.05 acres) rank highest among their peers in terms of typical parcel size.</p>
+<div id="fig-size-sd" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-size-sd-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell">
+<iframe src="data/geo/sd_size.html" width="672" height="400px" data-external="1">
+</iframe>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-size-sd-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5.6: Median parcel size by Senate District
+</figcaption>
+</figure>
+</div>
 <p>The data presented above represents a snapshot of faith-owned parcels by Virginia General Assembly Districts. A full exploration of these parcels for site feasibility is outside the scope of this report. However, it is clear that a significant amount of land exists that could represent potential residential development.</p>
 
 
