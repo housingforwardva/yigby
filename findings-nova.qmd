@@ -23,74 +23,84 @@ Conducting a spatial join in QGIS between the 652 identified parcels and the Nor
 
 ```{r}
 #| label: fig-lots-nv
-#| fig-cap: "Lot Size Distribution in NVRC region"
+#| fig-cap: "Distribution of lot sizes in NVRC region"
 
 faith_mapped <- st_read("data/nova_faith_zoning.gpkg", quiet = TRUE)|> 
   st_drop_geometry() |> 
   distinct(ll_uuid, .keep_all = TRUE)
 
-median_lot <- median(faith_mapped$acres)
-median_label <- ifelse(median_lot < 1,
-                      paste0(round(median_lot * 43560), " sq ft"),
-                      paste(round(median_lot, 1), " acres"))
+lot_size_label <- function(x) {
+  ifelse(
+    x < 0.1,
+    paste(format(round(x * 43560), big.mark = ","), "sqft"),
+    paste(formatC(x, digits = 3), "acres")
+  )
+}
 
-ggplot(faith_mapped,
-       aes(
-         x = acres
-       ))+
-  # Histogram bars
+median_lot <- median(faith_mapped$acres)
+
+median_label <- lot_size_label(median_lot)
+
+lb <- 10^(seq(log10(0.01), log10(100), length.out = 31))
+
+lb_plot <- c(
+  500/43560, 1000/43560, 2000/43560,
+  0.1, 0.25, 0.5, 1, 2, 5, 10, 25, 50, 100
+  )
+
+ggplot(faith_mapped, aes(y = acres)) +
   geom_histogram(
-    bins = 40,
+    breaks = lb,
     fill = "#011E41",
-    color = "white",
+    color = NA,
+    alpha = 0.2
+  ) +
+  geom_density(
+    aes(x = ..count.. * 0.14),
+    color = "#011E41", 
+    size = 0.5,
     alpha = 0.7
   ) +
-  # Density curve with much lower scaling factor
-  geom_density(aes(y = ..count.. * 2), # Reduced scaling factor significantly
-              color = "#40c0c0", 
-              size = 1,
-              alpha = 0.8) +
-  # Improved x-axis scale
-  scale_x_log10(
-    breaks = c(0.1, 0.25, 0.5, 1, 2.5, 5, 10, 25, 50, 100, 250, 500),
-    labels = function(x) ifelse(x < 1, 
-                               paste0(round(x * 43560), " sq ft"),
-                               paste(x, "acres")),
-    expand = expansion(mult = c(0.02, 0.02))
-  ) +
-  # Y-axis with appropriate scale
-  scale_y_continuous(
-    breaks = seq(0, 25000, by = 5000),
-    labels = label_number(big.mark = ","),
-    expand = expansion(mult = c(0, 0.05))
-  ) +
-  # Labels and title
-  labs(
-    title = "Distribution of Lot Sizes in NVRC region",
-    subtitle = "Small lots shown in square feet, larger lots in acres",
-    x = "Lot Size",
-    y = "Number of Properties"
-  ) +
-  theme_hfv() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.grid.major.x = element_line(color = "gray90", size = 0.5),
-    panel.grid.major.y = element_line(color = "gray90", size = 0.5)
-  ) +
   # Add vertical line for median
-  geom_vline(xintercept = median_lot,
-             color = "#8B85CA",
-             linetype = "dashed",
-             size = 1) +
-  # Add median label
-  annotate("text",
-           x = median_lot,
-           y = max(hist(faith_mapped$acres, breaks = 40, plot = FALSE)$counts) * 0.95,
-           label = paste("Median:", median_label),
-           color = "#8B85CA",
-           hjust = -0.1,
-           fontface = "bold")
-
+  geom_hline(
+    yintercept = median_lot,
+    color = "#8B85CA",
+    linetype = "dashed",
+    linewidth = 0.75
+  ) +
+  annotate(
+    "text",
+    y = median_lot,
+    x = 75,
+    label = paste("Median:", median_label),
+    color = "#8B85CA",
+    size = 3,
+    hjust = 1,
+    vjust = -1,
+    fontface = "bold"
+  ) +
+  coord_cartesian(ylim = c(100, 0.01)) +
+  scale_x_continuous(
+    limits = c(0, 75),
+    expand = c(0.01, 0.01),
+    labels = label_comma()
+  ) +
+  scale_y_continuous(
+    trans = c("log10", "reverse"),
+    breaks = lb_plot,
+    expand = c(0.02, 0.02),
+    labels = lot_size_label
+  ) +
+  labs(
+    title = "Distribution of lot sizes in NVRC region",
+    subtitle = "Small lots shown in square feet, larger lots in acres",
+    x = "Number of parcels"
+  ) +
+  theme_hfv(
+    flip_gridlines = T,
+    axis.title.x = element_text(hjust = 0, margin = margin(t = 6)),
+    axis.text.y = element_text(vjust = 0.5)
+  )
 
 ```
 
@@ -100,12 +110,8 @@ Based on the Virginia Zoning Atlas analysis, multifamily housing is prohibited o
 #| label: fig-zoned-mf
 #| fig-cap: "NVRC parcels by multifamily zoning treatment"
 
-faith_mapped <- st_read("data/nova_faith_zoning.gpkg", quiet = TRUE)|> 
-  st_drop_geometry() |> 
-  distinct(ll_uuid, .keep_all = TRUE) |> 
-  drop_na(family4_treatment)
-
-mf <- faith_mapped |> 
+mf <- faith_mapped |>  
+  drop_na(family4_treatment) |> 
   select(ll_uuid, family4_treatment) |> 
   mutate(count = 1) |> 
   group_by(family4_treatment) |> 
@@ -114,14 +120,22 @@ mf <- faith_mapped |>
 
 ggplot(mf, 
        aes(
-         x = reorder(family4_treatment, count),
+         x = family4_treatment,
+         #x = reorder(family4_treatment, count),
          y = count,
          fill = family4_treatment
            )) +
   geom_col() +
-  theme_hfv(base_size = 10) +
+  theme_hfv() +
   scale_fill_hfv() +
-  labs(title = "NVRC parcels by multifamily zoning treatment")
+  scale_x_discrete(
+    labels = c("Allowed\nby-right", "Public hearing\nrequired", "Prohibited")
+  ) +
+  add_zero_line() +
+  labs(
+    title = "Multifamily development potential for NVRC parcels",
+    subtitle = "Current multifamily development treatment in local zoning"
+    )
 
 ```
 
@@ -129,12 +143,11 @@ The graph below shows the number of faith-owned parcels in each jurisdiction wit
 
 ```{r}
 #| label: fig-nova-count
-#| fig-cap: "Total parcels by jurisdiction in the NVRC region"
+#| fig-cap: "Total faith-owned parcels by jurisdiction in the NVRC region"
 
 nova_zoning <- st_read("data/nova_faith_zoning.gpkg", quiet = TRUE)|> 
   st_drop_geometry() |> 
   distinct(ll_uuid, .keep_all = TRUE)
-
 
 count_type_area <- nova_zoning |> 
   drop_na(jurisdiction_2) |> 
@@ -150,18 +163,18 @@ ggplot(count_type_area,
     fill = "#40c0c0"
   ) +
   geom_text(aes(
-    label = comma(count), 
-    hjust = -0.1
-    )) +
+    label = comma(count)),
+    hjust = 0,
+    nudge_y = 5,
+    color = "#40c0c0") +
   coord_flip() +
-  theme_hfv(
-    base_size = 10
-    ) +
+  theme_hfv(flip_gridlines = T) +
+  add_zero_line("y") +
   scale_y_continuous(
     labels = number_format(big.mark = ","),
     expand = expansion(mult = c(0, 0.01)),
     limits = c(0, 250)) +
-  labs(title = "Total faith-owned parcels by jurisdiction")
+  labs(title = "Total faith-owned parcels by jurisdiction in the NVRC region")
 
 ```
 
@@ -169,18 +182,7 @@ Prince William County maintains its top spot when looking at total acreage of th
 
 ```{r}
 #| label: fig-nova-acres
-#| fig-cap: "Total acres by jurisdiction in the NVRC region"
-
-nova_zoning <- st_read("data/nova_faith_zoning.gpkg", quiet = TRUE)|> 
-  st_drop_geometry() |> 
-  distinct(ll_uuid, .keep_all = TRUE)
-
-count_type_area <- nova_zoning |> 
-  drop_na(jurisdiction_2) |> 
-  group_by(jurisdiction_2) |> 
-  summarise(acres = round(sum(acres), digits = 2),
-            count = n_distinct(ll_uuid)
-            ) 
+#| fig-cap: "Total acres of faith-owned parcels by jurisdiction in the NVRC region"
 
 ggplot(count_type_area,
        aes(x = reorder(jurisdiction_2, acres),
@@ -191,22 +193,19 @@ ggplot(count_type_area,
   geom_text(aes(
     label = comma(acres), 
     hjust = -0.1
-    )) +
+    ),
+    color = "#40c0c0") +
   coord_flip() +
-  theme_hfv(
-    base_size = 10
-    ) +
+  theme_hfv(flip_gridlines = T) +
+  add_zero_line() +
   scale_y_continuous(
     labels = number_format(big.mark = ","),
     expand = expansion(mult = c(0, 0.01)),
     limits = c(0, 1500)
     ) +
-  theme(
-    panel.grid.major.y = element_blank(),
-    panel.grid.major.x = element_line(linewidth = 0.5)
-    ) +
   labs(
-    title = "Total acres of faith-owned parcels by jurisdiction")
+    title = "Total acres of faith-owned parcels by jurisdiction in the NVRC region")
+
 ```
 
 The Virginia Zoning Atlas allows users and researchers to understand what types of housing can be built, and whether what can be built requires a public hearing process. This process called "entitlement" is a process that requires property owners and developers to meet certain requirements and receive approval from the governing body to build what it is proposing. There are important considerations that go into these decisions, such as whether what is being proposed aligns with the community's comprehensive plan or whether the existing community opposes it or not. This process can be cumbersome and illicit irrational opposition based on misconceptions about density and change. Elected officials can easily be pushed by a vocal minority to vote down housing in spite of its alignment with community plans and explicit need.

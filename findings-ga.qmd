@@ -72,7 +72,7 @@ Based on House Districts, the majority of faith-based parcel ownership is in sou
 # jenks_pal_hd1 <- create_jenks_palette(hd$faith_house_count, pal = "YlOrRd")
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+# map_hd1 <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
 #   setView(va_lng, va_lat, zoom = 6.75) |>
 #   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
@@ -94,9 +94,11 @@ Based on House Districts, the majority of faith-based parcel ownership is in sou
 #       }"
 #   )
 # 
-# saveWidget(map_jenks, "data/geo/hd_count.html")
+# map_hd1
+# 
+# saveWidget(map_hd1, "maps/map_hd1.html")
 
-knitr::include_url("data/geo/hd_count.html")
+knitr::include_url("maps/map_hd1.html")
 
 ```
 
@@ -114,16 +116,16 @@ When focused on total acreage of faith-owned parcels, House District 33 and and 
 # jenks_pal_hd2 <- create_jenks_palette(hd$faith_house_total_acres, pal = "YlGn")
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+# map_hd2 <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
 #   setView(va_lng, va_lat, zoom = 6.75) |>
-#   addProviderTiles("CartoDB.Positron") |> 
+#   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
 #     fillColor = ~jenks_pal_hd2(faith_house_total_acres),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("House District:", NAMELSAD, "<br>Value:", label_acres)
-#   ) |> 
+#   ) |>
 #   addLegend(
 #     pal = jenks_pal_hd2,
 #     values = hd$faith_house_total_acres,
@@ -136,9 +138,11 @@ When focused on total acreage of faith-owned parcels, House District 33 and and 
 #       }"
 #   )
 # 
-# saveWidget(map_jenks, "data/geo/hd_acres.html")
+# map_hd2
+# 
+# saveWidget(map_hd2, "maps/map_hd2.html")
 
-knitr::include_url("data/geo/hd_acres.html")
+knitr::include_url("maps/map_hd2.html")
 
 ```
 
@@ -156,31 +160,31 @@ The median parcel size can better help us understand areas where there is adequa
 # jenks_pal_hd3 <- create_jenks_palette(hd$med_parcel_size, pal = "YlGnBu")
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+# map_hd3 <- leaflet(hd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
 #   setView(va_lng, va_lat, zoom = 6.75) |>
-#   addProviderTiles("CartoDB.Positron") |> 
+#   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
 #     fillColor = ~jenks_pal_hd3(med_parcel_size),
 #     fillOpacity = 0.7,
 #     color = "grey",
 #     weight = 1,
 #     popup = ~paste("House District:", NAMELSAD, "<br>Value:", label_size)
-#   ) |> 
+#   ) |>
 #   addLegend(
 #     pal = jenks_pal_hd3,
 #     values = hd$med_parcel_size,
 #     title = "Median Parcel Size",
 #     position = "topleft"
-#   ) |> 
+#   ) |>
 #   onRender(
 #     "function(el, x) {
 #         L.control.zoom({position:'topright'}).addTo(this);
 #       }"
 #   )
 # 
-# saveWidget(map_jenks, "data/geo/hd_size.html")
+# saveWidget(map_hd3, "maps/map_hd3.html")
 
-knitr::include_url("data/geo/hd_size.html")
+knitr::include_url("maps/map_hd3.html")
 
 ```
 
@@ -200,7 +204,7 @@ Senate Districts undoubtedly show similar patterns as House Districts. Senate Di
 # jenks_pal_sd1 <- create_jenks_palette(sd$faith_senate_count, pal = "YlOrRd")
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(sd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+# map_sd1 <- leaflet(sd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
 #   setView(va_lng, va_lat, zoom = 6.75) |>
 #   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
@@ -222,9 +226,9 @@ Senate Districts undoubtedly show similar patterns as House Districts. Senate Di
 #       }"
 #   )
 # 
-# saveWidget(map_jenks, "data/geo/sd_count.html")
+# saveWidget(map_sd1, "maps/map_sd1.html")
 
-knitr::include_url("data/geo/sd_count.html")
+knitr::include_url("maps/map_sd1.html")
 
 ```
 
@@ -242,7 +246,7 @@ Senate Districts with the largest total acreage of faith-owned parcels are Senat
 # jenks_pal_sd2 <- create_jenks_palette(sd$faith_senate_total_acres, pal = "YlGn")
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(sd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+# map_sd2 <- leaflet(sd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
 #   setView(va_lng, va_lat, zoom = 6.75) |>
 #   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
@@ -264,9 +268,9 @@ Senate Districts with the largest total acreage of faith-owned parcels are Senat
 #       }"
 #   )
 # 
-# saveWidget(map_jenks, "data/geo/sd_acres.html")
+# saveWidget(map_sd2, "maps/map_sd2.html")
 
-knitr::include_url("data/geo/sd_acres.html")
+knitr::include_url("maps/map_sd2.html")
 
 ```
 
@@ -284,7 +288,7 @@ Senate Districts with larger median parcel sizes are around the Richmond region 
 # jenks_pal_sd3 <- create_jenks_palette(sd$med_parcel_size, pal = "YlGnBu")
 # 
 # # Create the leaflet map
-# map_jenks <- leaflet(sd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
+# map_sd3 <- leaflet(sd, options = leafletOptions(zoomControl = FALSE,  zoomSnap = 0.25)) |>
 #   setView(va_lng, va_lat, zoom = 6.75) |>
 #   addProviderTiles("CartoDB.Positron") |>
 #   addPolygons(
@@ -306,9 +310,9 @@ Senate Districts with larger median parcel sizes are around the Richmond region 
 #       }"
 #   )
 # 
-# saveWidget(map_jenks, "data/geo/sd_size.html")
+# saveWidget(map_sd3, "maps/map_sd3.html")
 
-knitr::include_url("data/geo/sd_size.html")
+knitr::include_url("maps/map_sd3.html")
 
 ```
 
