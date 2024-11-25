@@ -3,8 +3,8 @@ project:
   execute-dir: project
   output-dir: docs
   
-#execute: 
-#  freeze: auto
+execute: 
+  freeze: auto
 
 format:
   html:

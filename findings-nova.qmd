@@ -173,7 +173,7 @@ ggplot(count_type_area,
   scale_y_continuous(
     labels = number_format(big.mark = ","),
     expand = expansion(mult = c(0, 0.01)),
-    limits = c(0, 250)) +
+    limits = c(0, 240)) +
   labs(title = "Total faith-owned parcels by jurisdiction in the NVRC region")
 
 ```
@@ -191,7 +191,7 @@ ggplot(count_type_area,
     fill = "#40c0c0"
   ) +
   geom_text(aes(
-    label = comma(acres), 
+    label = label_comma(accuracy = 0.1)(acres), 
     hjust = -0.1
     ),
     color = "#40c0c0") +
@@ -229,15 +229,9 @@ percent_to_numeric <- function(x) {
 
 pct_tbl <- read_rds("data/rds/nova_byright_table.rds") |> 
   drop_na(jurisdiction) |> 
-  mutate(across(3:5, .fns = ~ percent_to_numeric(.x)))
-
-# pct_tbl |> 
-#   arrange(desc(parcels)) |> 
-#   kbl(col.names = c("Jurisdiction", "Parcel Count", "Single-Family", "Duplex", "Multifamily (3+)"),
-#       align = "lcccc") |> 
-#     kable_styling(bootstrap_options = c("striped", "condensed"))
-
-
+  mutate(across(3:5, .fns = ~ percent_to_numeric(.x))) |> 
+  mutate(across(3:5, .fns = ~ round(.x, 3))) 
+  #mutate(across(3:5, .fns = ~ na_if(.x, 0)))
 
 datatable(pct_tbl, 
           caption = htmltools::tags$caption(
@@ -249,7 +243,7 @@ datatable(pct_tbl,
             'Percent of parcels zoned by-right'
           ),
 
-          colnames = c("Jurisdiction", "Parcel Count", "Single-Family",
+          colnames = c("Jurisdiction", "Parcels", "Single-Family",
                        "Duplex", "Multifamily"),
           rownames = FALSE,
           options = list(
@@ -261,52 +255,53 @@ datatable(pct_tbl,
               "function(settings, json) {",
               "$(this.api().table().header()).css({'font-family': 'Open Sans'});",
               "}"
-          ),
-            columnDefs = list(list(className = 'dt-center', targets = 1:4))  # Center-align columns 2-5
+            ),
+            columnDefs = list(
+              list(className = 'dt-left', targets = 0),
+              list(className = 'dt-center', targets = 1),
+              list(width = "20%", targets = 2:4)
+              #list(className = 'dt-left', targets = 2:4)
+            )  
           ),
           style = "bootstrap",
           fillContainer = TRUE) %>%
   formatStyle(
     columns = 3,  # Single-Family
-    background = styleColorBar(pct_tbl[, 3], '#40c0c0'),
+    background = styleColorBar(pct_tbl[, 3], '#40c0c033'),
     backgroundSize = '98% 88%',
     backgroundRepeat = 'no-repeat',
     backgroundPosition = 'center',
-    color = '#606060'  # Set text color to light grey
+    color = '#40c0c0' 
   ) %>%
   formatStyle(
     columns = 4,  # Duplex
-    background = styleColorBar(pct_tbl[, 4], '#8b85ca'),
+    background = styleColorBar(pct_tbl[, 4], '#8b85ca33'),
     backgroundSize = '98% 88%',
     backgroundRepeat = 'no-repeat',
     backgroundPosition = 'center',
-    color = '#606060'  # Set text color to light grey
+    color = '#8b85ca'  
   ) %>%
   formatStyle(
     columns = 5,  # Multifamily
-    background = styleColorBar(pct_tbl[, 5], '#011e41'),
+    background = styleColorBar(pct_tbl[, 5], '#011e4126'),
     backgroundSize = '98% 88%',
     backgroundRepeat = 'no-repeat',
     backgroundPosition = 'center',
-    color = '#606060'  # Set text color to light grey
+    color = '#011e41' 
   ) %>%
-  formatPercentage(columns = 3:5, digits = 1) |> 
+  formatPercentage(columns = 3:5, digits = 0, zero.print = "") |> 
     formatStyle(names(pct_tbl),
               fontFamily = "Open Sans")
-
-
-
 
 ```
 
 For a majority of parcels in the region, many could be redeveloped as single-family housing without having to go through a public hearing process. However, fewer and fewer parcels can be redeveloped into denser housing options like duplexes or multifamily housing. Alexandria and Arlington are the most permissive due to their most recent zoning changes, but they have faced legal challenges that are put the analysis into question in those areas. More recently a judge overturned the Missing Middle zoning changes in Arlington and these have no doubt impacted the analysis. What will come of the legal challenges in Alexandria is yet to be seen, but the Arlington decision certainly puts the permissiveness on faith-owned parcels in Alexandria in jeopardy.
 
-The figure below specifically focuses on by-right multifamily housing. As mentioned before, the number for Alexandria could change pending a court case, while the Arlington number will have certainly changed and will require a reversion to the previous zoning ordinance without the most recent Missing Middle amendments. Following these two localities, the City of Falls Church allows for 44 percent of identified faith-owned parcels to be developed as multifamily housing by-right. These figures decrease across the remaining jurisdictions with some not allowing for any faith-owned parceled to be developed by-right as multifamily housing.
+The figure below specifically focuses on by-right multifamily housing. As mentioned before, the number for Alexandria could change pending a court case, while the Arlington number will have certainly changed and will require a reversion to the previous zoning ordinance without the most recent Missing Middle amendments. Following these two localities, the City of Falls Church allows for 43 percent of identified faith-owned parcels to be developed as multifamily housing by-right. These figures decrease across the remaining jurisdictions with some not allowing for any faith-owned parceled to be developed by-right as multifamily housing.
 
 ```{r}
 #| label: fig-pct-2
 #| fig-cap: "Percent of parcels zoned by-right for multifamily housing"
-
 
 pct_bar <- read_rds("data/rds/nova_byright_table.rds") |> 
   drop_na(jurisdiction) |> 
@@ -319,21 +314,17 @@ ggplot(pct_bar,
     fill = "#40c0c0"
   ) +
   geom_text(aes(
-    label = percent(multifamily, 2)), 
+    label = label_percent(accuracy = 1)(multifamily), 
     hjust = -0.1
-    ) +
+    ),
+    color = "#40c0c0") +
   coord_flip() +
-  theme_hfv(
-    base_size = 10
-    ) +
+  theme_hfv(flip_gridlines = T) +
+  add_zero_line() +
   scale_y_continuous(
-    labels = percent_format(),
+    labels = label_percent(),
     expand = expansion(mult = c(0, 0.01)),
-    limits = c(0, 1.01)
-    ) +
-  theme(
-    panel.grid.major.y = element_blank(),
-    panel.grid.major.x = element_line(linewidth = 0.5)
+    limits = c(0, 1)
     ) +
   labs(title = "Percent of faith-owned parcels zoned for by-right multifamily")
 
