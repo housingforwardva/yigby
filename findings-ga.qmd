@@ -53,7 +53,7 @@ create_jenks_palette <- function(data, n_classes = 5, pal = "YlOrRd") {
 
 ```
 
-The introduction of the Faith in Housing bill into the Virginia General Assembly presents an opportunity to also explore faith-based parcel ownership at based on house and senate districts. This provides state legislatures with a unique perspective on aspects of faith-based parcel ownership within their districts.
+The introduction of the Faith in Housing bill into the Virginia General Assembly presents an opportunity to also explore faith-based parcel ownership based on house and senate districts. This provides state legislatures with a unique perspective on aspects of faith-based parcel ownership within their districts.
 
 ::: {.callout-note}
 ### State legislative districts in Virginia

@@ -77,7 +77,7 @@ Following this was a series of retaining and eliminating entries based on keywor
 
 For example, a review would lead to the identification of several instances of "Mocha Temple". The Mocha Shriners are a fraternal order and not a faith-based organization, but they often refer to their properties as temples. Therefore, "Mocha" was used as a word to eliminate entries from the dataframe.
 
-In contrast, there were several words that were always associated with a faith-based property. These words or phrases were used to retain entries. For example, the term "Lutheran" and "Presbyterian" were always associated with a faith-based organization. A list of organizations found in the SCC data was matched to the dataframe based on entity names.
+In contrast, there were several words that were always associated with a faith-based property. These words or phrases were used to retain entries. For example, the terms "Lutheran" and "Presbyterian" were always associated with a faith-based organization. A list of organizations found in the SCC data was matched to the dataframe based on entity names.
 
 ### Preliminary selections
 
@@ -86,7 +86,7 @@ The series of data retention and elimination led to two dataframes:
 1. A dataframe of 22,387 entries where the likelihood of ownership by a faith-based organization was confirmed or high, and
 2. A dataframe of 1,318 unconfirmed entries.
 
-The unconfirmed dataframe was manually reviewed by HFV and entries that were not a faith-based organization were removed. This includes individuals wherein their name resulted in a false positive (e.g., their named contained the word "Lord," "Christian," or "Church"). Other entries that were removed were companies or other entities that were more than likely not a faith-based organization. This manual review resulted in the reduction of the unconfirmed dataframe to 415 entries.
+The unconfirmed dataframe was manually reviewed by HFV and entries that were not a faith-based organization were removed. This includes individuals wherein their name resulted in a false positive (e.g., their name contained the word "Lord," "Christian," or "Church"). Other entries that were removed were companies or other entities that were more than likely not a faith-based organization. This manual review resulted in the reduction of the unconfirmed dataframe to 415 entries.
 
 The resulting dataframes were combined leading to a total of 22,802 entries.
 
@@ -94,7 +94,7 @@ The resulting dataframes were combined leading to a total of 22,802 entries.
 
 An additional review of the data identified the continued presence of certain terms and other organizations not previously removed. This included schools, academies, media companies, and cemeteries. These entries were removed and resulted in a total of 22,466 entries. Instances of duplicate parcels existed and were identified using Regrid's "ll_uuid" field, which uniquely identifies a single parcel. This further reduced the total number of entries to 22,453.
 
-The resulted data were then combined with geospatial data in QGIS to calculate the acreage for all parcels. While LOVELAND Technologies provides this data as a field, their coverage was not complete for all jurisdictions. This dataset was used in the ensuing analysis.
+The resulting data were then combined with geospatial data in QGIS to calculate the acreage for all parcels. While LOVELAND Technologies provides this data as a field, their coverage was not complete for all jurisdictions. This dataset was used in the ensuing analysis.
 
 ## Data accuracy
 
